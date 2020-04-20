@@ -1,0 +1,6 @@
+[
+ {:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}
+ {:name "Test 2" :address "Address 2" :city "City" :zip "12345" :phone "123 456-7891" :categories #{:italian} :opts #{:closed}}
+ {:name "Test 3" :address "Address 3" :city "City" :zip "12345" :phone "123 456-7892" :categories #{:mexican}}
+ {:name "Test 4" :address "Address 4" :city "City" :zip "12345" :phone "123 456-7893" :categories #{:mexican}}
+ ]
