@@ -188,11 +188,11 @@
   [output-path categories]
   (let [today (l/format-local-time (l/local-now) :year-month-day)]
     (->> categories
+         (remove #(= :all (first %)))
          (mapv (fn [[cat-k _]]
-                {:loc (str "https://nosoupforyou.com/" (when-not (= cat-k :all)
-                                                         (str (name cat-k) "/")))
-                 :lastmod today
-                 :changefreq "monthly"}))
+                 {:loc (str "https://nosoupforyou.com/"(name cat-k) "/")
+                  :lastmod today
+                  :changefreq "monthly"}))
          (sitemap/generate-sitemap)
          (sitemap/save-sitemap (File. (str output-path "sitemap.xml"))))))
 
