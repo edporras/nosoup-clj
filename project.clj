@@ -8,6 +8,8 @@
 
                  [hiccup "1.0.5"]
                  [ring/ring-codec "1.1.1"]
+                 [clj-time "0.15.2"]
+                 [sitemap "0.4.0"]
 
                  [com.taoensso/timbre "4.10.0"]]
   :main ^:skip-aot nosoup-clj.core

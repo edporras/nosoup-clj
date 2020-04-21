@@ -1,14 +1,17 @@
 (ns nosoup-clj.core
   (:require [nosoup-clj.init         :as init]
             [nosoup-clj.spec         :as spec]
+            [clj-time.local          :as l]
             [clojure.java.io         :as io]
             [clojure.string          :as str]
             [hiccup.core             :refer [html]]
             [hiccup.page             :as page]
             [ring.util.codec         :as codec :refer-only [form-encode]]
+            [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
             [taoensso.timbre         :as timbre :refer [info warn fatal]])
   (:import [java.util Locale]
-           [java.text Collator])
+           [java.text Collator]
+           [java.io   File])
   (:gen-class))
 
 (def categories-config  (io/resource "categories.edn"))
@@ -181,6 +184,18 @@
                   {category-k filtered-restaurants}))))
        (into {})))
 
+(defn categories->sitemap
+  [output-path categories]
+  (let [today (l/format-local-time (l/local-now) :year-month-day)]
+    (->> categories
+         (mapv (fn [[cat-k _]]
+                {:loc (str "https://nosoupforyou.com/" (when-not (= cat-k :all)
+                                                         (str (name cat-k) "/")))
+                 :lastmod today
+                 :changefreq "monthly"}))
+         (sitemap/generate-sitemap)
+         (sitemap/save-sitemap (File. (str output-path "sitemap.xml"))))))
+
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]
   {:pre [string? base-output-path]}
@@ -198,7 +213,8 @@
         (with-open [w (io/writer output-path)]
           (binding [*print-length* false
                     *out* w]
-            (print (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list))))))))
+            (print (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list))))))
+    (categories->sitemap base-output-path filtered-category-list)))
 
 (defn -main
   [& args]

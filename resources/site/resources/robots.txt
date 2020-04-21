@@ -1,0 +1,3 @@
+User-agent: *
+Disallow:
+Sitemap: https://nosoupforyou.com/sitemap.xml
