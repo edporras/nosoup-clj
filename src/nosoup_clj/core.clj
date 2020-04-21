@@ -171,7 +171,7 @@
          (filter #(contains? (:categories %) selected-category)))))
 
 (defn generate-category-restaurant-list
-  "Create a map for category to filtered restaurant data based on it."
+  "Create a map of {category filtered-restaurant-data}."
   [categories restaurants]
   (->> categories
        (map (fn [[category-k category-str]]
@@ -195,7 +195,7 @@
                              "index.html")]
         (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries, saved to '" output-path "'"))
         (io/make-parents output-path)
-        (with-open [w (clojure.java.io/writer output-path)]
+        (with-open [w (io/writer output-path)]
           (binding [*print-length* false
                     *out* w]
             (print (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list))))))))
