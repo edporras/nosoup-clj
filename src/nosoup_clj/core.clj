@@ -139,8 +139,12 @@
                          base-title
                          (str base-title " - " category-str))]
                [:meta {:name "author" :content "Ed Porras"}]
-               [:meta {:name "description" :content (str "Guide of independent restaurants in " site-city-state ".")}]
-               [:meta {:name "keywords" :content (str site-city " Restaurants breakfast lunch brunch dinner")}]
+               [:meta {:name "description"
+                       :content (str "Guide of independent restaurants and grocers in " site-city-state (when-not (= :all category-k) 
+                                                                                                          (str " under the " category-str " category")))}]
+               [:meta {:name "keywords"
+                       :content (str site-city " Local Independently-owned Restaurants" (when-not (= :all category-k)
+                                                                                          (str " " category-str)))}]
                [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,user-scalable=no"}]
                (page/include-css "/css/styles.css")
                (page/include-js "/js/searchbar.js")]
