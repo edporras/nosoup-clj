@@ -24,8 +24,8 @@ function selChange()
     var cat = menu.options[ menu.selectedIndex ].value;
     var url = "/";
 
-    // strip the "All"
-    if (cat != "All" && cat != "all") {
+    // strip the "all"
+    if ("all".localeCompare(cat, 'en', {sensitivity: 'base'})) {
         url += cat + "/";
     }
 
