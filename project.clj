@@ -14,4 +14,5 @@
                  [com.taoensso/timbre "4.10.0"]]
   :main ^:skip-aot nosoup-clj.core
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :profiles {:uberjar {:aot :all}
+             :test    {:dependencies [[hickory "0.7.1"]]}})
