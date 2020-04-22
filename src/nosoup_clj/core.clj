@@ -133,24 +133,32 @@
                     (restaurant-links " | "))]
               [:div {:class "cats"} (restaurant-category-listing r full-category-list selected-category-key)]]]))))
 
+(defn generate-category-page-head
+  "Generate the head portion of the page."
+  [[category-k category-str]]
+  [:head [:title (if (= :all category-k)
+                   base-title
+                   (str base-title " - " category-str))]
+   [:meta {:name "author" :content "Ed Porras"}]
+   [:meta {:name "description"
+           :content (str "Guide of independent restaurants and grocers in "
+                         site-city-state
+                         (when-not (= :all category-k)
+                           (str " under the " category-str " category")))}]
+   [:meta {:name "keywords"
+           :content (str site-city
+                         " Local Independently-owned Restaurants"
+                         (when-not (= :all category-k)
+                           (str " " category-str)))}]
+   [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,user-scalable=no"}]
+   (page/include-css "/css/styles.css")
+   (page/include-js "/js/searchbar.js")])
+
 (defn generate-category-page
   "Generate page output for the selected category using the filtered list of restaurants and categories."
-  [[category-k category-str] filtered-restaurants filtered-category-list full-category-list]
+  [[category-k :as category] filtered-restaurants filtered-category-list full-category-list]
   (page/html5 {:lang "en"}
-              [:head
-               [:title (if (= :all category-k)
-                         base-title
-                         (str base-title " - " category-str))]
-               [:meta {:name "author" :content "Ed Porras"}]
-               [:meta {:name "description"
-                       :content (str "Guide of independent restaurants and grocers in " site-city-state (when-not (= :all category-k) 
-                                                                                                          (str " under the " category-str " category")))}]
-               [:meta {:name "keywords"
-                       :content (str site-city " Local Independently-owned Restaurants" (when-not (= :all category-k)
-                                                                                          (str " " category-str)))}]
-               [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,user-scalable=no"}]
-               (page/include-css "/css/styles.css")
-               (page/include-js "/js/searchbar.js")]
+              (generate-category-page-head category)
               [:body {:onload "load();"}
                [:header
                 [:h1 [:img {:src "/img/logo.png" :alt (str "Dining in " site-city) :width "293" :height "42"}]]
