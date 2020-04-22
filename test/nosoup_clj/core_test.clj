@@ -179,3 +179,13 @@
     (is (= (sut/generate-category-restaurant-list {:american "American"}
                                                   (sut/read-restaurant-list test-restaurants))
            {}))))
+
+(deftest categories->sitemap-test
+  (testing "Sitemap generation from a filtered and sorted category list."
+    (is (= (sut/categories->sitemap "2020-04-22" [[:italian "Italian"] [:mexican "Mexicat"]])
+           "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url></urlset>"))))
+
+(deftest categories->sitemap-omits-all-test
+  (testing "Sitemap generation from a filtered and sorted category list omits `:all` entry."
+    (is (= (sut/categories->sitemap "2020-04-22" [[:all "All"] [:italian "Italian"] [:mexican "Mexicat"]])
+           "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url></urlset>"))))

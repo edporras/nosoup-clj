@@ -185,16 +185,16 @@
        (into {})))
 
 (defn categories->sitemap
-  [output-path categories]
-  (let [today (l/format-local-time (l/local-now) :year-month-day)]
-    (->> categories
-         (remove #(= :all (first %)))
-         (mapv (fn [[cat-k _]]
-                 {:loc (str "https://nosoupforyou.com/"(name cat-k) "/")
-                  :lastmod today
-                  :changefreq "monthly"}))
-         (sitemap/generate-sitemap)
-         (sitemap/save-sitemap (File. (str output-path "sitemap.xml"))))))
+  "Generate the site's sitemap from the givene final category list."
+  [lastmod-date filtered-categories]
+  {:pre [string? lastmod-date]}
+  (->> filtered-categories
+       (remove #(= :all (first %)))
+       (mapv (fn [[cat-k _]]
+               {:loc (str "https://nosoupforyou.com/"(name cat-k) "/")
+                :lastmod lastmod-date
+                :changefreq "monthly"}))
+       (sitemap/generate-sitemap)))
 
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]
@@ -214,7 +214,9 @@
           (binding [*print-length* false
                     *out* w]
             (print (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list))))))
-    (categories->sitemap base-output-path filtered-category-list)))
+    (->> filtered-category-list
+         (categories->sitemap (l/format-local-time (l/local-now) :year-month-day))
+         (sitemap/save-sitemap (File. (str base-output-path "sitemap.xml"))))))
 
 (defn -main
   [& args]
