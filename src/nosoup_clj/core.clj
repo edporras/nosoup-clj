@@ -204,12 +204,17 @@
                 :changefreq "monthly"}))
        (sitemap/generate-sitemap)))
 
+(defn filter-category-list-from-generated-restaurant-data
+  "Removes entries from the category list that didn't generate any page output."
+  [category-rest-data full-category-list]
+  (sort (select-keys full-category-list (keys category-rest-data))))
+
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]
   {:pre [string? base-output-path]}
   (info (str "read " (count full-category-list) " categories and " (count full-restaurant-list) " restaurants"))
   (let [category-rest-data      (generate-category-restaurant-list full-category-list full-restaurant-list)
-        filtered-category-list  (sort (select-keys full-category-list (keys category-rest-data)))]
+        filtered-category-list  (filter-category-list-from-generated-restaurant-data category-rest-data full-category-list)]
     (doseq [[category-k filtered-restaurants] category-rest-data]
       (let [category-str (category-k full-category-list)
             output-path (str base-output-path
