@@ -102,7 +102,7 @@
 
 (deftest restaurant-category-listing-single-all-test
   (testing "Category list with single entry, `:all` selected, creates link output with 'Under'."
-    (let [rest       {:name "ABC" :categories #{:mexican}}
+    (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
           categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
           output     (sut/restaurant-category-listing rest categories :all)]
       (is (= (html->hiccup output)
@@ -110,7 +110,7 @@
 
 (deftest restaurant-category-listing-single-selected-test
   (testing "Category list with single entry, same selected, creates '<br />' for spacing."
-    (let [rest       {:name "ABC" :categories #{:mexican}}
+    (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
           categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
           output     (sut/restaurant-category-listing rest categories :mexican)]
       (is (= (html->hiccup output)
@@ -118,7 +118,7 @@
 
 (deftest restaurant-category-listing-multiple-other-selected-test
   (testing "Category list with multiple entries, one selected, creates link output with 'Also under'."
-    (let [rest       {:name "ABC" :categories #{:mexican :italian}}
+    (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican :italian}}
           categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
           output     (sut/restaurant-category-listing rest categories :mexican)]
       (is (= (html->hiccup output)
@@ -126,23 +126,23 @@
 
 (deftest restaurant-by-category-single-category-test
   (testing "Restaurant list is filtered by the given category."
-    (let [restaurants [{:name "Restaurant 1" :categories #{:italian}}
-                       {:name "Restaurant 2" :categories #{:mexican}}
-                       {:name "Restaurant 3" :categories #{:american}}]]
+    (let [restaurants [{:name "Restaurant 1" :address "A" :city "A" :zip "12345" :phone "123 456-7890" :categories #{:italian}}
+                       {:name "Restaurant 2" :address "B" :city "B" :zip "12345" :phone "123 456-7890" :categories #{:mexican}}
+                       {:name "Restaurant 3" :address "C" :city "C" :zip "12345" :phone "123 456-7890" :categories #{:american}}]]
       (is (= (sut/restaurant-by-category restaurants :mexican)
-             [{:name "Restaurant 2" :categories #{:mexican}}])))))
+             [{:name "Restaurant 2" :address "B" :city "B" :zip "12345" :phone "123 456-7890" :categories #{:mexican}}])))))
 
 (deftest restaurant-by-category-all-test
   (testing "Restaurant list is not filtered when given `:all`"
-    (let [restaurants [{:name "Restaurant 1" :categories #{:italian}}
-                       {:name "Restaurant 2" :categories #{:mexican}}
-                       {:name "Restaurant 3" :categories #{:american}}]]
+    (let [restaurants [{:name "Restaurant 1" :address "A" :city "A" :zip "12345" :phone "123 456-7890" :categories #{:italian}}
+                       {:name "Restaurant 2" :address "B" :city "B" :zip "12345" :phone "123 456-7890" :categories #{:mexican}}
+                       {:name "Restaurant 3" :address "C" :city "C" :zip "12345" :phone "123 456-7890" :categories #{:american}}]]
       (is (= (sut/restaurant-by-category restaurants :all)
              restaurants)))))
 
 (deftest restaurants->html-single-category-test
   (testing "Restaurant listing output with single category."
-    (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :categories #{:mexican}}]
+    (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :categories #{:mexican}}]
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)]
       (is (= (html->hiccup output)
              [[:li
@@ -150,7 +150,7 @@
                [:h2 {} "Rest Name"]
                [:div
                 {:class "info"}
-                [:br {}]
+                "123 456-7890" [:br {}]
                 [:address {} "B" [:br {}] "C, FL 22222"]
                 [:div
                  {:class "links"}
@@ -163,7 +163,7 @@
 
 (deftest restaurants->html-single-category-with-alias-test
   (testing "Restaurant listing output with single category and an alias uses alias in heading."
-    (let [rest-list [{:name "Rest Name" :alias "Resty" :address "B" :city "C" :zip "22222" :categories #{:mexican}}]
+    (let [rest-list [{:name "Rest Name" :alias "Resty" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :categories #{:mexican}}]
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)
           h2-text   (-> (map html/as-hickory (html/parse-fragment output))
                         first
@@ -173,11 +173,11 @@
 
 (deftest restaurants->html-single-category-with-twitter-test
   (testing "Restaurant listing output with single category and twitter link."
-    (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :twitter "rn" :categories #{:mexican}}]
+    (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :twitter "rn" :categories #{:mexican}}]
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)
           twitter   (-> (map html/as-hickory (html/parse-fragment output))
                         first
-                        (get-in [:content 1 :content 2 :content 2])
+                        (get-in [:content 1 :content 3 :content 2])
                         (dissoc :type :tag))]
       (is (= twitter
              {:attrs {:href "https://twitter.com/rn", :rel "noopener noreferrer", :target "_blank"},
@@ -266,12 +266,12 @@
 
 (deftest filter-category-list-from-generated-restaurant-data-test
   (testing  "Removes entries from the category list that didn't generate any page output."
-    (is (= (sut/filter-category-list-from-generated-restaurant-data {:all "" :italian ""} {:all "" :italian "" :mexican "" :latin ""})
-           {:all "" :italian ""}))))
+    (is (= (sut/filter-category-list-from-generated-restaurant-data {:all "A" :italian "I"} {:all "A" :italian "I" :mexican "M" :latin "L"})
+           {:all "A" :italian "I"}))))
 
 (deftest filter-category-list-from-generated-restaurant-data-returns-sorted-list-test
   (testing  "Filtered category list is sorted."
-    (let [output (sut/filter-category-list-from-generated-restaurant-data {:italian "" :all "" :vietnamese ""} {:all "" :italian "" :mexican "" :latin "" :chinese ""})]
+    (let [output (sut/filter-category-list-from-generated-restaurant-data {:italian "I" :all "A" :vietnamese "V"} {:all "A" :italian "I" :mexican "M" :latin "L" :chinese "C"})]
       (is (= output
              (into (sorted-map) output))))))
 

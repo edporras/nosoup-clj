@@ -77,7 +77,7 @@
 (defn restaurant-map-link-data
   "Generate the map link tuple for the restaurant's address to be passed to `restaurant-links`."
   [{:keys [name city coords]}]
-  {:pre [string? name string? city]}
+  {:pre [string? name string? city (s/nilable (s/valid? :restaurant/coords coords))]}
   [(str base-mapping-url
          (str #_"\"" (codec/form-encode name) #_"\""
               (codec/form-encode (str " " city " " site-state))
@@ -92,6 +92,7 @@
 (defn twitter-link-data
   "Generate the map link tuple for the twitter link, to be passed to `restaurant-links`."
   [handle]
+  {:pre [(s/nilable (s/valid? :restaurant/twitter handle))]}
   (when handle
     [(str base-twitter-url handle) (str "@" handle)]))
 
@@ -119,7 +120,7 @@
 (defn restaurants->html
   "Generate page output for a restaurant listing based on the selected category."
   [restaurants full-category-list selected-category-key]
-  {:pre [(s/valid? ::spec/categories full-category-list) keyword? selected-category-key #_(s/valid? ::spec/restaurants restaurants)]}
+  {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) keyword? selected-category-key]}
     (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
           (let [restaurant-name (or alias name)]
             [:li
@@ -178,7 +179,7 @@
 (defn restaurant-by-category
   "Filter the list of restaurants using the given `selected-category`."
   [restaurants selected-category]
-  {:pre [vector? restaurants keyword? selected-category]}
+  {:pre [(s/valid? ::spec/restaurants restaurants) keyword? selected-category]}
   (if (= selected-category :all)
     restaurants ;; don't filter anything
     (->> restaurants
