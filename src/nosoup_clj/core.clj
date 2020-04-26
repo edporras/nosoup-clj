@@ -2,6 +2,7 @@
   (:require [nosoup-clj.init         :as init]
             [nosoup-clj.spec         :as spec]
             [clj-time.local          :as l]
+            [clojure.spec.alpha      :as s]
             [clojure.java.io         :as io]
             [clojure.string          :as str]
             [hiccup.core             :refer [html]]
@@ -43,7 +44,7 @@
 (defn categories->html
   "Generate the navigation pulldown selector from the category list."
   [categories selected-category]
-  {:pre [keyword? selected-category]}
+  {:pre [(s/valid? ::spec/categories categories) keyword? selected-category]}
   [:nav [:form {:name "catlist" :method :get :action "/c"}
          [:select {:name "cat" :size 1 :onchange "selChange();"}
           (for [[k category-str] categories]
@@ -99,7 +100,7 @@
   label. Show all if in the `:all` view; otherwise, show other not
   matching the selected one."
   [{:keys [categories] :as restaurant} full-categories-list selected-category-key]
-  {:pre [set? categories vector? full-categories-list keyword? selected-category-key]}
+  {:pre [set? categories (s/valid? ::spec/categories full-categories-list) keyword? selected-category-key]}
   (let [[label restaurant-categories] (if (= :all selected-category-key)
                                         ["Under: "      categories]
                                         ["Also under: " (remove #{selected-category-key} categories)])]
@@ -118,7 +119,8 @@
 (defn restaurants->html
   "Generate page output for a restaurant listing based on the selected category."
   [restaurants full-category-list selected-category-key]
-  (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
+  {:pre [(s/valid? ::spec/categories full-category-list) keyword? selected-category-key #_(s/valid? ::spec/restaurants restaurants)]}
+    (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
           (let [restaurant-name (or alias name)]
             [:li
              [:h2 restaurant-name]
@@ -135,7 +137,8 @@
 
 (defn generate-category-page-head
   "Generate the head portion of the page."
-  [[category-k category-str]]
+  [[category-k category-str :as c]]
+  {:pre [(s/valid? ::spec/category c)]}
   [:head [:title (if (= :all category-k)
                    base-title
                    (str base-title " - " category-str))]
@@ -192,10 +195,15 @@
                   {category-k filtered-restaurants}))))
        (into {})))
 
+(defn filter-category-list-from-generated-restaurant-data
+  "Removes entries from the category list that didn't generate any page output."
+  [category-rest-data full-category-list]
+  (into (sorted-map) (select-keys full-category-list (keys category-rest-data))))
+
 (defn categories->sitemap
   "Generate the site's sitemap from the givene final category list."
   [lastmod-date filtered-categories]
-  {:pre [string? lastmod-date]}
+  {:pre [string? lastmod-date (s/valid? ::spec/categories filtered-categories)]}
   (->> filtered-categories
        (remove #(= :all (first %)))
        (mapv (fn [[cat-k _]]
@@ -203,11 +211,6 @@
                 :lastmod lastmod-date
                 :changefreq "monthly"}))
        (sitemap/generate-sitemap)))
-
-(defn filter-category-list-from-generated-restaurant-data
-  "Removes entries from the category list that didn't generate any page output."
-  [category-rest-data full-category-list]
-  (sort (select-keys full-category-list (keys category-rest-data))))
 
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]

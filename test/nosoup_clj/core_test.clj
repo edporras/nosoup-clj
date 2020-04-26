@@ -25,7 +25,7 @@
 
 (deftest categories->html-selected-test
   (testing "Category options list selects the correct option."
-    (is (= (sut/categories->html [[:a "A"] [:mexican "Mexican"] [:c "C"]] :mexican)
+    (is (= (sut/categories->html {:a "A" :mexican "Mexican" :c "C"} :mexican)
            [:nav
             [:form
              {:name "catlist", :method :get, :action "/c"}
@@ -264,12 +264,23 @@
                                                   (sut/read-restaurant-list test-restaurants))
            {}))))
 
-(deftest categories->sitemap-test
+(deftest filter-category-list-from-generated-restaurant-data-test
+  (testing  "Removes entries from the category list that didn't generate any page output."
+    (is (= (sut/filter-category-list-from-generated-restaurant-data {:all "" :italian ""} {:all "" :italian "" :mexican "" :latin ""})
+           {:all "" :italian ""}))))
+
+(deftest filter-category-list-from-generated-restaurant-data-returns-sorted-list-test
+  (testing  "Filtered category list is sorted."
+    (let [output (sut/filter-category-list-from-generated-restaurant-data {:italian "" :all "" :vietnamese ""} {:all "" :italian "" :mexican "" :latin "" :chinese ""})]
+      (is (= output
+             (into (sorted-map) output))))))
+
+  (deftest categories->sitemap-test
   (testing "Sitemap generation from a filtered and sorted category list."
-    (is (= (sut/categories->sitemap "2020-04-22" [[:italian "Italian"] [:mexican "Mexicat"]])
+    (is (= (sut/categories->sitemap "2020-04-22" {:italian "Italian" :mexican "Mexicat"})
            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url></urlset>"))))
 
 (deftest categories->sitemap-omits-all-test
   (testing "Sitemap generation from a filtered and sorted category list omits `:all` entry."
-    (is (= (sut/categories->sitemap "2020-04-22" [[:all "All"] [:italian "Italian"] [:mexican "Mexicat"]])
+    (is (= (sut/categories->sitemap "2020-04-22" {:all "All" :italian "Italian" :mexican "Mexicat"})
            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url></urlset>"))))
