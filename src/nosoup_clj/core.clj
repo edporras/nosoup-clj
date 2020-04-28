@@ -226,7 +226,8 @@
                                (str (name category-k) "/"))
                              "index.html")]
         (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries, saved to '" output-path "'"))
-        (io/make-parents output-path)
+        (when-not (.isDirectory (io/file output-path))
+          (io/make-parents output-path))
         (with-open [w (io/writer output-path)]
           (binding [*print-length* false
                     *out* w]
