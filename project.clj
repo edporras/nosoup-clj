@@ -5,7 +5,6 @@
             :url "https://opensource.org/licenses/mit-license.php"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/tools.cli "0.4.2"]
-                 [org.clojure/test.check "0.10.0"]
 
                  [hiccup "1.0.5"]
                  [ring/ring-codec "1.1.1"]
@@ -16,4 +15,9 @@
   :main ^:skip-aot nosoup-clj.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
-             :test    {:dependencies [[hickory "0.7.1"]]}})
+             :test {:dependencies [[hickory "0.7.1"]
+                                   [org.clojure/test.check "0.9.0"]]}
+             :dev  {:dependencies [[hickory "0.7.1"]
+                                   [org.clojure/test.check "0.9.0"]]}
+             :repl {:dependencies [[hickory "0.7.1"]
+                                   [org.clojure/test.check "0.9.0"]]}})
