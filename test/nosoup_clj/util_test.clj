@@ -1,7 +1,8 @@
 (ns nosoup-clj.util-test
   (:require [clojure.test    :refer [deftest is testing]]
             [clojure.java.io :as io]
-            [nosoup-clj.util :as sut])
+            [nosoup-clj.util :as sut]
+            [tools.io        :refer [with-tempfile]])
   (:import  [java.util Date]))
 
 (deftest categories->sitemap-test
@@ -23,24 +24,24 @@
 
 (deftest to-disk-test
   (testing "Writes file to disk and returns `true`."
-    (let [tmp-file (java.io.File/createTempFile "out" ".txt")
-          status   (sut/to-disk tmp-file (pr-str [1 2 3 4]))]
-      (.deleteOnExit tmp-file)
-      (is (and (= status true) (.exists (io/file tmp-file)))))))
+    (with-tempfile [tmp]
+      (let [tmp-file (io/file tmp)
+            status   (sut/to-disk tmp-file "[1 2 3 4]")]
+        (is (and (= status true) (.exists tmp-file)))))))
 
 (deftest output->disk-test
   (testing "Writes file to disk (creating parent dirs) and returns `true`."
-    (let [tmp-file (java.io.File/createTempFile "index" ".html")
-          status   (sut/output->disk (.getAbsolutePath tmp-file) [1 2 3 4])]
-      (.deleteOnExit tmp-file)
-      (is (and (= status true) (.exists tmp-file))))))
+    (with-tempfile [tmp]
+      (let [tmp-file (io/file tmp)
+            status   (sut/output->disk (.getAbsolutePath tmp-file) "[1 2 3 4]")]
+        (is (and (= status true) (.exists tmp-file)))))))
 
 (deftest output->disk-no-write-test
-  (testing "Does not overwrite file to disk when matching file exists; returns `nil`"
-    (let [tmp-file (java.io.File/createTempFile "index" ".html")
-          output   [1 2 3 4]]
-      (.deleteOnExit tmp-file)
-      (sut/to-disk tmp-file (pr-str output)) ;; pre-write file to disk
-      (let [mod-date-before (Date. (.lastModified tmp-file))
-            status          (sut/output->disk (.getAbsolutePath tmp-file) output)]
-        (is (and (nil? status) (= mod-date-before (Date. (.lastModified tmp-file)))))))))
+  (testing "Does not overwrite file to disk when matching file exists; returns `nil`."
+    (with-tempfile [tmp]
+      (let [output   "[1 2 3 4]"
+            out-file (io/file tmp)]
+        (sut/to-disk out-file output) ;; pre-write file to disk
+        (let [mod-date-before (Date. (.lastModified out-file))
+              status          (sut/output->disk out-file output)]
+          (is (and (nil? status) (= mod-date-before (Date. (.lastModified out-file))))))))))

@@ -17,8 +17,12 @@
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
              :test {:dependencies [[hickory "0.7.1"]
-                                   [org.clojure/test.check "0.9.0"]]}
+                                   [org.clojure/test.check "0.9.0"]
+                                   [com.oscaro/tools-io "0.3.19"]]}
              :dev  {:dependencies [[hickory "0.7.1"]
-                                   [org.clojure/test.check "0.9.0"]]}
+                                   [org.clojure/test.check "0.9.0"]
+                                   [com.oscaro/tools-io "0.3.19"]]}
              :repl {:dependencies [[hickory "0.7.1"]
-                                   [org.clojure/test.check "0.9.0"]]}})
+                                   [org.clojure/test.check "0.9.0"]
+                                   [com.oscaro/tools-io "0.3.19"]]
+                                   }})
