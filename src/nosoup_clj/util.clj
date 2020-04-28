@@ -3,9 +3,10 @@
             [clj-time.local          :as l]
             [clojure.spec.alpha      :as s]
             [clojure.java.io         :as io]
-            [sitemap.core            :as sitemap :refer-only [generate-sitemap]])
-  (:import [java.io   File]
-           [java.util Date])
+            [digest                  :refer [sha-256]]
+            [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
+            [taoensso.timbre         :as timbre :refer [info]])
+  (:import  [java.util Date])
   (:gen-class))
 
 (defn categories->sitemap
@@ -26,14 +27,24 @@
        (categories->sitemap (l/format-local-time (l/local-now) :year-month-day))
        (sitemap/save-sitemap out-file)))
 
-(defn html->disk
-  [output-path page-output]
-  (when-not (.isDirectory (io/file output-path))
-    (io/make-parents output-path))
-  (with-open [w (io/writer output-path)]
+(defn to-disk
+  [out-file output]
+  (with-open [w (io/writer out-file)]
     (binding [*print-length* false
               *out* w]
-      (print page-output))))
+      (print output)
+      true)))
+
+(defn output->disk
+  "Writes output to disk unless existing matching output already exists."
+  [output-path page-output]
+  (if-not (.exists (io/file output-path))
+    (do
+      (io/make-parents output-path)
+      (to-disk output-path page-output))
+    (when (not= (sha-256 page-output) (sha-256 (slurp output-path)))
+      (info "  writing" output-path)
+      (to-disk output-path page-output))))
 
 (comment
 
