@@ -1,18 +1,16 @@
 (ns nosoup-clj.core
   (:require [nosoup-clj.init         :as init]
+            [nosoup-clj.util         :as util]
             [nosoup-clj.spec         :as spec]
-            [clj-time.local          :as l]
             [clojure.spec.alpha      :as s]
             [clojure.java.io         :as io]
             [clojure.string          :as str]
             [hiccup.core             :refer [html]]
             [hiccup.page             :as page]
             [ring.util.codec         :as codec :refer-only [form-encode]]
-            [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
             [taoensso.timbre         :as timbre :refer [info warn fatal]])
   (:import [java.util Locale]
-           [java.text Collator]
-           [java.io   File])
+           [java.text Collator])
   (:gen-class))
 
 (def categories-config  (io/resource "categories.edn"))
@@ -201,18 +199,6 @@
   [category-rest-data full-category-list]
   (into (sorted-map) (select-keys full-category-list (keys category-rest-data))))
 
-(defn categories->sitemap
-  "Generate the site's sitemap from the givene final category list."
-  [lastmod-date filtered-categories]
-  {:pre [string? lastmod-date (s/valid? ::spec/categories filtered-categories)]}
-  (->> filtered-categories
-       (remove #(= :all (first %)))
-       (mapv (fn [[cat-k _]]
-               {:loc (str "https://nosoupforyou.com/"(name cat-k) "/")
-                :lastmod lastmod-date
-                :changefreq "monthly"}))
-       (sitemap/generate-sitemap)))
-
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]
   {:pre [string? base-output-path]}
@@ -226,15 +212,9 @@
                                (str (name category-k) "/"))
                              "index.html")]
         (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries, saved to '" output-path "'"))
-        (when-not (.isDirectory (io/file output-path))
-          (io/make-parents output-path))
-        (with-open [w (io/writer output-path)]
-          (binding [*print-length* false
-                    *out* w]
-            (print (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list))))))
-    (->> filtered-category-list
-         (categories->sitemap (l/format-local-time (l/local-now) :year-month-day))
-         (sitemap/save-sitemap (File. (str base-output-path "sitemap.xml"))))))
+        (let [cat-output (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list)]
+          (util/html->disk output-path cat-output))))
+    (util/generate-sitemap (io/file (str base-output-path "sitemap.xml")) filtered-category-list)))
 
 (defn -main
   [& args]
