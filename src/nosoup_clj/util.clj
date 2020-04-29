@@ -1,6 +1,7 @@
 (ns nosoup-clj.util
   (:require [nosoup-clj.spec         :as spec]
             [clj-time.local          :as l]
+            [clojure.edn             :as edn]
             [clojure.spec.alpha      :as s]
             [clojure.java.io         :as io]
             [digest                  :refer [sha-256]]
@@ -8,6 +9,15 @@
             [taoensso.timbre         :as timbre :refer [info]])
   (:import  [java.util Date])
   (:gen-class))
+
+(defn read-config
+  "Opens the edn configuration and checks that the read object looks valid."
+  [file spec]
+  (let [config-data (with-open [r (io/reader file)]
+                      (edn/read (java.io.PushbackReader. r)))]
+    (assert (s/valid? spec config-data)
+            (s/explain-str spec config-data))
+    config-data))
 
 (defn categories->sitemap
   "Generate the site's sitemap from the givene final category list."

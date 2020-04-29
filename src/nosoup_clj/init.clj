@@ -1,21 +1,10 @@
 (ns nosoup-clj.init
-  (:require [clojure.edn             :as edn]
-            [clojure.java.io         :as io]
-            [clojure.spec.alpha      :as s]
+  (:require [clojure.java.io         :as io]
             [clojure.string          :as str]
             [clojure.tools.cli       :refer [parse-opts]])
   (:gen-class))
 
 (def default-base-output-dir "resources/site/html/")
-
-(defn read-config
-  "Opens the edn configuration and checks that the read object looks valid."
-  [file spec]
-  (let [config-data (with-open [r (io/reader file)]
-                      (edn/read (java.io.PushbackReader. r)))]
-    (assert (s/valid? spec config-data)
-            (s/explain-str spec config-data))
-    config-data))
 
 (defn- usage [options-summary]
   (->> ["Nosoup Site Generator"

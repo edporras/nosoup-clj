@@ -27,7 +27,7 @@
 (defn read-categories-list
   "Reads the categories config, injects a global entry used to list `:all`."
   [categories-edn]
-  (->> (init/read-config categories-edn ::spec/categories)
+  (->> (util/read-config categories-edn ::spec/categories)
        (into {:all "All"})))
 
 (def str-collator (Collator/getInstance (Locale. "en_US")))
@@ -35,7 +35,7 @@
   "Reads the restaurants config sorting by the name. Filters out any
   restaurants marked `:closed`."
   [restaurants-edn]
-  (->> (init/read-config restaurants-edn ::spec/restaurants)
+  (->> (util/read-config restaurants-edn ::spec/restaurants)
        (remove #(contains? (:opts %) :closed))
        (sort-by :name str-collator)))
 
