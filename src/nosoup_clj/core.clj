@@ -8,7 +8,7 @@
             [hiccup.core             :refer [html]]
             [hiccup.page             :as page]
             [ring.util.codec         :as codec :refer-only [form-encode]]
-            [taoensso.timbre         :as timbre :refer [info warn fatal]])
+            [taoensso.timbre         :as timbre :refer [info fatal]])
   (:import [java.util Locale]
            [java.text Collator])
   (:gen-class))
@@ -216,6 +216,10 @@
             (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries..."))
             (->> (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list)
                  (util/output->disk output-path)))
+          (when (.exists (io/file output-path))
+            (info (str "No restaurants found for category " category-k " - deleting old output at " output-path))
+            (io/delete-file output-path)
+            (io/delete-file (str/replace output-path #"index.html" "")))
           )))
     (util/generate-sitemap base-output-path filtered-category-list)))
 
@@ -236,11 +240,5 @@
   (def categories  (read-categories-list categories-config))
   (def restaurants (read-restaurant-list (io/file "test/restaurants.edn")))
 
-  (let [category-rest-data   (generate-category-restaurant-list categories restaurants)
-        final-category-list  (sort (select-keys categories (keys category-rest-data)))
-        [_ filtered-restaurants :as c] (first category-rest-data)
-        ]
-    (generate-category-page c filtered-restaurants final-category-list categories))
-
   (generate-site {})
-)
+  )
