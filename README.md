@@ -15,5 +15,5 @@ created your own configuration, you generate the static pages with:
 
     $ java -jar nosoup-clj-0.1.0-standalone.jar gen path-to-restaurants-config.edn
 
-See [resources/test-restaurants.edn](resources/test-restaurants.edn)
+See [test/restaurants.edn](test/restaurants.edn)
 for an example.

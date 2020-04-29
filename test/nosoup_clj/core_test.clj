@@ -11,12 +11,12 @@
        (html/parse-fragment)
        (mapv html/as-hiccup)))
 
-(def test-categories (io/resource "test-categories.edn"))
+(def test-categories (io/file "test/categories.edn"))
 (deftest read-categories-list-adds-all-entry-test
   (testing "Entry for `:all` is added to read categories."
     (is (= "All" (:all (sut/read-categories-list test-categories))))))
 
-(def test-restaurants (io/resource "test-restaurants.edn"))
+(def test-restaurants (io/file "test/restaurants.edn"))
 (deftest read-restaurant-list-filters-closed-test
   (testing "Restaurants marked `:closed` are filtered."
     (let [restaurants (sut/read-restaurant-list test-restaurants)]

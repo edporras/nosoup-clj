@@ -13,7 +13,7 @@
            [java.text Collator])
   (:gen-class))
 
-(def categories-config  (io/resource "categories.edn"))
+(def categories-config  (io/file "resources/categories.edn"))
 
 (def site-city "Gainesville")
 (def site-state "FL")
@@ -232,7 +232,7 @@
 (comment
 
   (def categories  (read-categories-list categories-config))
-  (def restaurants (read-restaurant-list (io/resource "test-restaurants.edn")))
+  (def restaurants (read-restaurant-list (io/file "test/restaurants.edn")))
 
   (let [category-rest-data   (generate-category-restaurant-list categories restaurants)
         final-category-list  (sort (select-keys categories (keys category-rest-data)))
