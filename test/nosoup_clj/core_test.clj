@@ -225,9 +225,9 @@
 (deftest generate-category-page-sets-lang-test
   (testing "Generated HTML for a page has language set to 'en'."
     (let [output  (sut/generate-category-page [:italian "Italian"]
-                                       [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
-                                       {:italian "Italian"}
-                                       {:italian "Italian"})
+                                              [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
+                                              {:italian "Italian"}
+                                              {:italian "Italian"})
           content (->> (:content (html/as-hickory (html/parse output)))
                        (filter #(= :html (:tag %)))
                        first)]
@@ -252,26 +252,26 @@
 
 (deftest generate-category-restaurant-list-test
   (testing "Generate category to restaurant list map."
-    (is (= (sut/generate-category-restaurant-list {:mexican "Mexican" :italian "Italian"}
+    (is (= (sut/generate-category-restaurant-list {:italian "Italian" :mexican "Mexican"}
                                                   (sut/read-restaurant-list test-restaurants))
-           {:italian [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
-            :mexican [{:name "Test 3" :address "Address 3" :city "City" :zip "12345" :phone "123 456-7892" :categories #{:mexican}}
-                      {:name "Test 4" :address "Address 4" :city "City" :zip "12345" :phone "123 456-7893" :categories #{:mexican}}]}))))
+           [[:italian '({:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}})]
+            [:mexican '({:name "Test 3" :address "Address 3" :city "City" :zip "12345" :phone "123 456-7892" :categories #{:mexican}}
+                        {:name "Test 4" :address "Address 4" :city "City" :zip "12345" :phone "123 456-7893" :categories #{:mexican}})]]))))
 
 (deftest generate-category-restaurant-list-empty-test
-  (testing "Generate category to restaurant list map produces empty list when none are found."
+  (testing "Generate category to restaurant list map produces entry w/ empty list when none are found."
     (is (= (sut/generate-category-restaurant-list {:american "American"}
                                                   (sut/read-restaurant-list test-restaurants))
-           {}))))
+           [[:american '()]]))))
 
 (deftest filter-category-list-from-generated-restaurant-data-test
   (testing  "Removes entries from the category list that didn't generate any page output."
-    (is (= (sut/filter-category-list-from-generated-restaurant-data {:all "A" :italian "I"} {:all "A" :italian "I" :mexican "M" :latin "L"})
+    (is (= (sut/filter-category-list-from-generated-restaurant-data [[:all '([])] [:italian '([])]] {:all "A" :italian "I" :mexican "M" :latin "L"})
            {:all "A" :italian "I"}))))
 
 (deftest filter-category-list-from-generated-restaurant-data-returns-sorted-list-test
   (testing  "Filtered category list is sorted."
-    (let [output (sut/filter-category-list-from-generated-restaurant-data {:italian "I" :all "A" :vietnamese "V"} {:all "A" :italian "I" :mexican "M" :latin "L" :chinese "C"})]
+    (let [output (sut/filter-category-list-from-generated-restaurant-data [[:italian '([])] [:all '([])] [:vietnamese '([])]] {:all "A" :italian "I" :mexican "M" :latin "L" :chinese "C"})]
       (is (= output
              (into (sorted-map) output))))))
 

@@ -119,7 +119,7 @@
   "Generate page output for a restaurant listing based on the selected category."
   [restaurants full-category-list selected-category-key]
   {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) keyword? selected-category-key]}
-    (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
+  (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
           (let [restaurant-name (or alias name)]
             [:li
              [:h2 restaurant-name]
@@ -184,20 +184,20 @@
          (filter #(contains? (:categories %) selected-category)))))
 
 (defn generate-category-restaurant-list
-  "Create a map of {category filtered-restaurant-data}."
+  "Create a vector of '(category filtered-restaurant-data) entries."
   [categories restaurants]
   (->> categories
-       (map (fn [[category-k category-str]]
-              (let [filtered-restaurants (restaurant-by-category restaurants category-k)]
-                (if (empty? filtered-restaurants)
-                  (warn "No restaurants in listing" category-str)
-                  {category-k filtered-restaurants}))))
-       (into {})))
+       (mapv (fn [[category-k _]]
+               [category-k (restaurant-by-category restaurants category-k)]))))
 
 (defn filter-category-list-from-generated-restaurant-data
   "Removes entries from the category list that didn't generate any page output."
   [category-rest-data full-category-list]
-  (into (sorted-map) (select-keys full-category-list (keys category-rest-data))))
+  (->> category-rest-data
+       (map (fn [[k data]] (when (seq data) k)))
+       (remove nil?)
+       (select-keys full-category-list)
+       (into (sorted-map))))
 
 (defn category-page-output-path
   [base-output-path category-k]
@@ -210,11 +210,13 @@
   (let [category-rest-data      (generate-category-restaurant-list full-category-list full-restaurant-list)
         filtered-category-list  (filter-category-list-from-generated-restaurant-data category-rest-data full-category-list)]
     (doseq [[category-k filtered-restaurants] category-rest-data]
-      (let [category-str (category-k full-category-list)
-            output-path  (category-page-output-path base-output-path category-k)]
-        (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries..."))
-        (->> (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list)
-             (util/output->disk output-path))))
+      (let [output-path (category-page-output-path base-output-path category-k)]
+        (if (seq filtered-restaurants)
+          (let [category-str (category-k full-category-list)]
+            (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries..."))
+            (->> (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list)
+                 (util/output->disk output-path)))
+          )))
     (util/generate-sitemap base-output-path filtered-category-list)))
 
 (defn -main
