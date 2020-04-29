@@ -199,6 +199,10 @@
   [category-rest-data full-category-list]
   (into (sorted-map) (select-keys full-category-list (keys category-rest-data))))
 
+(defn category-page-output-path
+  [base-output-path category-k]
+  (str base-output-path (when (not= :all category-k) (str (name category-k) "/")) "index.html"))
+
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]
   {:pre [string? base-output-path]}
@@ -207,10 +211,7 @@
         filtered-category-list  (filter-category-list-from-generated-restaurant-data category-rest-data full-category-list)]
     (doseq [[category-k filtered-restaurants] category-rest-data]
       (let [category-str (category-k full-category-list)
-            output-path (str base-output-path
-                             (when (not= :all category-k)
-                               (str (name category-k) "/"))
-                             "index.html")]
+            output-path  (category-page-output-path base-output-path category-k)]
         (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries..."))
         (->> (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list)
              (util/output->disk output-path))))

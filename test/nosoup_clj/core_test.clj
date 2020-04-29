@@ -274,3 +274,13 @@
     (let [output (sut/filter-category-list-from-generated-restaurant-data {:italian "I" :all "A" :vietnamese "V"} {:all "A" :italian "I" :mexican "M" :latin "L" :chinese "C"})]
       (is (= output
              (into (sorted-map) output))))))
+
+(deftest category-page-output-path-for-root-test
+  (testing "Output path for main index page.")
+  (is (= (sut/category-page-output-path "a-path/" :all)
+         "a-path/index.html")))
+
+(deftest category-page-output-path-for-subcategory-test
+  (testing "Output path for sub-category index page includes subpath.")
+  (is (= (sut/category-page-output-path "a-path/" :italian)
+         "a-path/italian/index.html")))
