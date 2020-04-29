@@ -215,7 +215,7 @@
         (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries..."))
         (->> (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list)
              (util/output->disk output-path))))
-    (util/generate-sitemap (io/file (str base-output-path "sitemap.xml")) filtered-category-list)))
+    (util/generate-sitemap base-output-path filtered-category-list)))
 
 (defn -main
   [& args]

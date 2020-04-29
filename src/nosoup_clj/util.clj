@@ -19,23 +19,32 @@
             (s/explain-str spec config-data))
     config-data))
 
+(defn file-mdate
+  "Get the modified date from a file."
+  [file]
+  (-> (Date. (.lastModified (io/file file)))
+      (l/format-local-time :year-month-day)))
+
 (defn categories->sitemap
-  "Generate the site's sitemap from the givene final category list."
-  [lastmod-date filtered-categories]
-  {:pre [string? lastmod-date (s/valid? ::spec/categories filtered-categories)]}
+  "Generate the site's sitemap from the given final category list. Reads
+  the modification time stamps from the output files found under the
+  `base-output-path`."
+  [base-output-path filtered-categories]
+  {:pre [string? base-output-path (s/valid? ::spec/categories filtered-categories)]}
   (->> filtered-categories
        (remove #(= :all (first %)))
        (mapv (fn [[cat-k _]]
-               {:loc (str "https://nosoupforyou.com/"(name cat-k) "/")
-                :lastmod lastmod-date
-                :changefreq "monthly"}))
+               (let [cat-str (str (name cat-k) "/")]
+                 {:loc (str "https://nosoupforyou.com/" cat-str)
+                  :lastmod (file-mdate (str base-output-path cat-str "index.html"))
+                  :changefreq "monthly"})))
        (sitemap/generate-sitemap)))
 
 (defn generate-sitemap
-  [out-file site-categories]
+  [base-output-path site-categories]
   (->> site-categories
-       (categories->sitemap (l/format-local-time (l/local-now) :year-month-day))
-       (sitemap/save-sitemap out-file)))
+       (categories->sitemap base-output-path)
+       (sitemap/save-sitemap (io/file (str base-output-path "sitemap.xml")))))
 
 (defn to-disk
   [out-file output]
@@ -57,8 +66,5 @@
       (to-disk output-path page-output))))
 
 (comment
-
-  (-> (Date. (.lastModified (File. "resources/site/html/pizza/index.html")))
-       (l/format-local-time :year-month-day))
-
+  (l/format-local-time (l/local-now) :year-month-day)
 )

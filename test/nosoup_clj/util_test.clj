@@ -1,26 +1,49 @@
 (ns nosoup-clj.util-test
-  (:require [clojure.test    :refer [deftest is testing]]
-            [clojure.java.io :as io]
-            [nosoup-clj.util :as sut]
-            [tools.io        :refer [with-tempfile]])
+  (:require [clj-time.coerce    :as c]
+            [clj-time.local     :as l]
+            [clojure.java.io    :as io]
+            [clojure.test       :refer [deftest is testing]]
+            [nosoup-clj.util    :as sut]
+            [tools.io           :refer [with-tempfile]])
   (:import  [java.util Date]))
+
+(def test-site-baseroot-path "test/site/")
+(def test-site-sitemap-xml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-14</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-29</lastmod><changefreq>monthly</changefreq></url></urlset>")
+
+(defn timestamp-test-files
+  []
+  (doseq [[f stamp] [["test/site/italian/index.html" "2020-04-14"]
+                     ["test/site/mexican/index.html" "2020-04-29"]]]
+    (let [file     (io/file f)
+          mod-time (-> (.lastModified file)
+                       (l/format-local-time :year-month-day))]
+      (when-not (= mod-time stamp)
+        (.setLastModified file (c/to-long stamp))))))
+
+(deftest file-mdate-test
+  (testing "Getting a file's mod time."
+    (timestamp-test-files)
+    (is (= (sut/file-mdate "test/site/italian/index.html")
+           "2020-04-14"))))
 
 (deftest categories->sitemap-test
   (testing "Sitemap generation from a filtered and sorted category list."
-    (is (= (sut/categories->sitemap "2020-04-22" {:italian "Italian" :mexican "Mexican"})
-           "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url></urlset>"))))
+    (timestamp-test-files)
+    (is (= (sut/categories->sitemap test-site-baseroot-path {:italian "Italian" :mexican "Mexican"})
+           test-site-sitemap-xml))))
 
 (deftest categories->sitemap-omits-all-test
   (testing "Sitemap generation from a filtered and sorted category list omits `:all` entry."
-    (is (= (sut/categories->sitemap "2020-04-22" {:all "All" :italian "Italian" :mexican "Mexican"})
-           "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-22</lastmod><changefreq>monthly</changefreq></url></urlset>"))))
+    (timestamp-test-files)
+    (is (= (sut/categories->sitemap test-site-baseroot-path {:all "All" :italian "Italian" :mexican "Mexican"})
+           test-site-sitemap-xml))))
 
 (deftest generate-sitemap-test
   (testing "Sitemap is written to disk at given path."
-    (let [tmp-file (java.io.File/createTempFile "sitemap" ".xml")]
-      (sut/generate-sitemap tmp-file {:all "All" :italian "Italian" :mexican "Mexican"})
-      (.deleteOnExit tmp-file)
-      (is (.exists (io/file tmp-file))))))
+    (let [sitemap (io/file (str test-site-baseroot-path "sitemap.xml"))]
+      (sut/generate-sitemap test-site-baseroot-path {:all "All" :italian "Italian" :mexican "Mexican"})
+      (.deleteOnExit sitemap)
+      (is (.exists sitemap)))))
 
 (deftest to-disk-test
   (testing "Writes file to disk and returns `true`."
