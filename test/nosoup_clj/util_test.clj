@@ -2,7 +2,7 @@
   (:require [clj-time.coerce    :as c]
             [clj-time.local     :as l]
             [clojure.java.io    :as io]
-            [clojure.test       :refer [deftest is testing]]
+            [clojure.test       :refer [deftest is testing use-fixtures]]
             [nosoup-clj.util    :as sut]
             [tools.io           :refer [with-tempfile]])
   (:import  [java.util Date]))
@@ -11,30 +11,30 @@
 (def test-site-sitemap-xml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-14</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-29</lastmod><changefreq>monthly</changefreq></url></urlset>")
 
 (defn timestamp-test-files
-  []
+  [all-tests]
   (doseq [[f stamp] [["test/site/italian/index.html" "2020-04-14"]
                      ["test/site/mexican/index.html" "2020-04-29"]]]
     (let [file     (io/file f)
           mod-time (-> (.lastModified file)
                        (l/format-local-time :year-month-day))]
       (when-not (= mod-time stamp)
-        (.setLastModified file (c/to-long stamp))))))
+        (.setLastModified file (c/to-long stamp)))))
+  (all-tests))
+
+(use-fixtures :once timestamp-test-files)
 
 (deftest file-mdate-test
   (testing "Getting a file's mod time."
-    (timestamp-test-files)
     (is (= (sut/file-mdate "test/site/italian/index.html")
            "2020-04-14"))))
 
 (deftest categories->sitemap-test
   (testing "Sitemap generation from a filtered and sorted category list."
-    (timestamp-test-files)
     (is (= (sut/categories->sitemap test-site-baseroot-path {:italian "Italian" :mexican "Mexican"})
            test-site-sitemap-xml))))
 
 (deftest categories->sitemap-omits-all-test
   (testing "Sitemap generation from a filtered and sorted category list omits `:all` entry."
-    (timestamp-test-files)
     (is (= (sut/categories->sitemap test-site-baseroot-path {:all "All" :italian "Italian" :mexican "Mexican"})
            test-site-sitemap-xml))))
 
