@@ -3,6 +3,7 @@
             [clj-time.local     :as l]
             [clojure.java.io    :as io]
             [clojure.test       :refer [deftest is testing use-fixtures]]
+            [nosoup-clj.core    :as nosoup]
             [nosoup-clj.util    :as sut]
             [tools.io           :refer [with-tempfile]])
   (:import  [java.util Date]))
@@ -53,7 +54,7 @@
         (is (and (= status true) (.exists tmp-file)))))))
 
 (deftest output->disk-test
-  (testing "Writes file to disk (creating parent dirs) and returns `true`."
+  (testing "Writes file to disk (creating parent dirs), returning `true`."
     (with-tempfile [tmp]
       (let [tmp-file (io/file tmp)
             status   (sut/output->disk (.getAbsolutePath tmp-file) "[1 2 3 4]")]
@@ -68,3 +69,14 @@
         (let [mod-date-before (Date. (.lastModified out-file))
               status          (sut/output->disk out-file output)]
           (is (and (nil? status) (= mod-date-before (Date. (.lastModified out-file))))))))))
+
+(deftest output->disk-uses-correct-print-test
+  (testing "Writes file with correct whitespaces."
+    (let [category    [:italian "Italian"]
+          restaurants [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
+          categories  {:italian "Italian"}]
+      (with-tempfile [tmp]
+        (->> (nosoup/generate-category-page category restaurants categories categories)
+             (sut/output->disk tmp))
+        (is (= (slurp tmp)
+               (slurp "test/site/italian/index.html")))))))
