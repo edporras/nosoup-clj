@@ -2,7 +2,9 @@
   (:require [clojure.set            :as set]
             [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as gen]
-            [clojure.string         :as str]))
+            [clojure.string         :as str]
+            [nosoup-clj.init        :as init]
+            [nosoup-clj.util        :as util]))
 
 (s/def ::non-empty-string (s/with-gen (s/and string? not-empty)
                             (fn [] (gen/not-empty (gen/string-alphanumeric)))))
@@ -18,29 +20,29 @@
 (s/def :restaurant/alias ::non-empty-string)
 (s/def :restaurant/address ::non-empty-string)
 (s/def :restaurant/city ::non-empty-string)
-(s/def :restaurant/categories (s/coll-of keyword? :kind set?))
-
 (s/def :restaurant/twitter ::non-empty-string)
 
 ;; more complex ones
+(def category-keys (set (keys (util/read-config init/categories-config)))) ;; TODO: avoid reading file again
+(s/def :restaurant/categories (s/with-gen #(and (set? %) (set/subset? % category-keys) (not= % :all))
+                                (fn [] (gen/not-empty
+                                       (gen/set (gen/elements (vec category-keys)) {:max-elements 3})))))
+
 (s/def :restaurant/zip (s/with-gen #(and (string? %) (re-matches #"[0-9]{5}" %))
                          #(gen/fmap (fn [v] (str/join v))
                                     (gen/vector (gen/choose 0 9) 5))))
-;; (gen/generate (s/gen :restaurant/zip))
 
 (s/def :restaurant/phone (s/with-gen #(and (string? %) (re-matches #"[0-9]{3} [0-9]{3}-[0-9]{4}" %))
                            #(gen/fmap (fn [[ac pf rem]] (str (str/join ac) " " (str/join pf) "-" (str/join rem)))
                                       (gen/tuple (gen/vector (gen/choose 0 9) 3)
                                                  (gen/vector (gen/choose 0 9) 3)
                                                  (gen/vector (gen/choose 0 9) 4)))))
-;; (gen/sample (s/gen :restaurant/phone) 1)
 (s/def :restaurant/uri (s/with-gen #(and (string? %) (re-matches #"^http(s)?://[a-zA-Z0-9]+.[a-z]+(/)?(.*?)" %))
                          #(gen/fmap (fn [[p s e x]] (str p "://" s "." (str/lower-case (str/join e)) "/" x))
                                     (gen/tuple (gen/elements ["http" "https"])
                                                (s/gen ::non-empty-string)
                                                (gen/not-empty (gen/vector (gen/char-alpha) 2 3))
                                                (gen/string-alphanumeric)))))
-;; (gen/sample (s/gen :restaurant/uri) 1)
 
 (def nsfy-dining-opts #{:dine-in :take-out :delivery :catering :food-truck})
 (s/def :restaurant/dine-opts (s/with-gen #(and (set? %) (set/subset? % nsfy-dining-opts))
@@ -80,3 +82,10 @@
   (assert (s/valid? spec data)
           (s/explain-str spec data))
   data)
+
+(comment
+(gen/generate (s/gen ::restaurant))
+;; (gen/generate (s/gen :restaurant/zip))
+;; (gen/sample (s/gen :restaurant/phone) 1)
+;; (gen/sample (s/gen :restaurant/uri) 1)
+)

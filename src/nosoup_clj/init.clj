@@ -6,6 +6,8 @@
 
 (def default-base-output-dir "resources/site/html/")
 
+(def categories-config  (io/file "resources/categories.edn"))
+
 (defn- usage [options-summary]
   (->> ["Nosoup Site Generator"
         ""

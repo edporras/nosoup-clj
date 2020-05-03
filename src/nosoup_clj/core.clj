@@ -13,8 +13,6 @@
            [java.text Collator])
   (:gen-class))
 
-(def categories-config  (io/file "resources/categories.edn"))
-
 (def site-city "Gainesville")
 (def site-state "FL")
 (def site-city-state (str site-city ", " site-state))
@@ -230,8 +228,8 @@
   (let [{:keys [action options exit-message ok?]} (init/validate-args args)]
     (if-not exit-message
       (case action
-        "gen" (let [full-restaurant-list {:full-restaurant-list (read-restaurant-list (:config options))}
-                    full-categories-list {:full-category-list (read-categories-list categories-config)}]
+        "gen" (let [full-categories-list {:full-category-list (read-categories-list init/categories-config)}
+                    full-restaurant-list {:full-restaurant-list (read-restaurant-list (:config options))}]
                 (generate-site (merge options full-restaurant-list full-categories-list))))
       (do ;; error validating args
         (fatal exit-message)
@@ -239,7 +237,7 @@
 
 (comment
 
-  (def categories  (read-categories-list categories-config))
+  (def categories  (read-categories-list init/categories-config))
   (def restaurants (read-restaurant-list (io/file "test/restaurants.edn")))
 
   (generate-site {})
