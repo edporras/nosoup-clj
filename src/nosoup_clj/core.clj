@@ -98,7 +98,7 @@
   "Generate the list of categories to be shown in the `Under`
   label. Show all if in the `:all` view; otherwise, show other not
   matching the selected one."
-  [{:keys [categories] :as restaurant} full-categories-list selected-category-key]
+  [{:keys [categories]} full-categories-list selected-category-key]
   {:pre [set? categories (s/valid? ::spec/categories full-categories-list) keyword? selected-category-key]}
   (let [[label restaurant-categories] (if (= :all selected-category-key)
                                         ["Under: "      categories]
@@ -106,9 +106,6 @@
     (if (seq restaurant-categories)
       (let [links (->> restaurant-categories
                        (mapv #(let [category-str (get full-categories-list %)]
-                                ;; TODO: move to spec?
-                                (assert (string? category-str)
-                                        (str "Restaurant '" (or (:alias restaurant) (:name restaurant)) "' has unknown category '" % "' in :categories."))
                                 (vec [(str "/" (name %) "/") category-str])))
                        (sort)
                        (restaurant-links ", "))]
