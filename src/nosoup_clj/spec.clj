@@ -73,3 +73,10 @@
                                      :restaurant/coords]))
 
 (s/def ::restaurants (s/coll-of ::restaurant))
+
+(defn check-spec
+  "Check if the data passes spec validation."
+  [spec data]
+  (assert (s/valid? spec data)
+          (s/explain-str spec data))
+  data)

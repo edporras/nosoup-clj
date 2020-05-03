@@ -2,7 +2,12 @@
   (:require [clojure.test                  :refer [deftest is]]
             [clojure.spec.alpha            :as s]
             [clojure.test.check.generators :as gen]
-            [nosoup-clj.spec               :as spec]))
+            [nosoup-clj.spec               :as sut]))
+
+(deftest check-spec-returns-data-test
+  (let [categories {:italian "Italian" :chinese "Chinese"}]
+    (is (= (sut/check-spec ::sut/categories categories)
+           categories))))
 
 (deftest zip-spec-not-string-test
   (is (not= :s/invalid (s/conform :restaurant/zip 32321))))
@@ -38,4 +43,4 @@
   (is (s/valid? :restaurant/coords (gen/generate (s/gen :restaurant/coords)))))
 
 (deftest restaurant-gen-test
-  (is (s/valid? ::spec/restaurant (gen/generate (s/gen ::spec/restaurant)))))
+  (is (s/valid? ::sut/restaurant (gen/generate (s/gen ::sut/restaurant)))))

@@ -1,8 +1,6 @@
 (ns nosoup-clj.util
-  (:require [nosoup-clj.spec         :as spec]
-            [clj-time.local          :as l]
+  (:require [clj-time.local          :as l]
             [clojure.edn             :as edn]
-            [clojure.spec.alpha      :as s]
             [clojure.java.io         :as io]
             [digest                  :refer [sha-256]]
             [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
@@ -11,13 +9,10 @@
   (:gen-class))
 
 (defn read-config
-  "Opens the edn configuration and checks that the read object looks valid."
-  [file spec]
-  (let [config-data (with-open [r (io/reader file)]
-                      (edn/read (java.io.PushbackReader. r)))]
-    (assert (s/valid? spec config-data)
-            (s/explain-str spec config-data))
-    config-data))
+  "Reads the contents of the EDN configuration FILE."
+  [file]
+  (with-open [r (io/reader file)]
+    (edn/read (java.io.PushbackReader. r))))
 
 (defn file-mdate
   "Get the modified date from a file."
@@ -30,7 +25,7 @@
   the modification time stamps from the output files found under the
   `base-output-path`."
   [base-output-path filtered-categories]
-  {:pre [string? base-output-path (s/valid? ::spec/categories filtered-categories)]}
+  {:pre [string? base-output-path]}
   (->> filtered-categories
        (remove #(= :all (first %)))
        (mapv (fn [[cat-k _]]
