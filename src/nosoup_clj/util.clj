@@ -2,6 +2,7 @@
   (:require [clj-time.local          :as l]
             [clojure.edn             :as edn]
             [clojure.java.io         :as io]
+            [clojure.string          :as str]
             [digest                  :refer [sha-256]]
             [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
             [taoensso.timbre         :as timbre :refer [info]])
@@ -51,6 +52,10 @@
     (when (resource-outdated? sitemap-path sitemap-output)
       (info "Writing " sitemap-path)
       (sitemap/save-sitemap (io/file sitemap-path) sitemap-output))))
+
+(defn cleanup-markup
+  [markup]
+  (str/replace markup #" type=\"text/javascript\"" ""))
 
 (defn to-disk
   [out-file output]

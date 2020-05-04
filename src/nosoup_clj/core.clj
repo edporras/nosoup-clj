@@ -212,6 +212,7 @@
           (let [category-str (category-k full-category-list)]
             (info (str "generating output for '" category-k "' with " (count filtered-restaurants) " entries..."))
             (->> (generate-category-page [category-k category-str] filtered-restaurants filtered-category-list full-category-list)
+                 (util/cleanup-markup)
                  (util/output->disk output-path)))
           (when (.exists (io/file output-path))
             (info (str "No restaurants found for category " category-k " - deleting old output at " output-path))

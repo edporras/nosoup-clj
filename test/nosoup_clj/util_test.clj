@@ -63,6 +63,11 @@
           data (str (slurp path) "blah")]
       (is (sut/resource-outdated? path data)))))
 
+(deftest cleanup-markup-removes-js-attrib-test
+  (testing "Removes type='javascript' attribute not valid in html5."
+    (is (= (sut/cleanup-markup "aa<script src=\"/js/searchbar.js\" type=\"text/javascript\"></script>aaa")
+           "aa<script src=\"/js/searchbar.js\"></script>aaa"))))
+
 (deftest to-disk-test
   (testing "Writes file to disk and returns `true`."
     (with-tempfile [tmp]
