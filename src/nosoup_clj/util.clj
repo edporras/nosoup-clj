@@ -20,6 +20,14 @@
   (-> (Date. (.lastModified (io/file file)))
       (l/format-local-time :year-month-day)))
 
+(defn resource-outdated?
+  "Checks if the file at OUTPUT-PATH exists. If so, returns `false` if
+  output matches DATA. Otherwise, returns `true`."
+  [output-path data]
+  (if (.exists (io/file output-path))
+    (not= (sha-256 data) (sha-256 (slurp output-path)))
+    true))
+
 (defn categories->sitemap
   "Generate the site's sitemap from the given final category list. Reads
   the modification time stamps from the output files found under the
@@ -37,9 +45,12 @@
 
 (defn generate-sitemap
   [base-output-path site-categories]
-  (->> site-categories
-       (categories->sitemap base-output-path)
-       (sitemap/save-sitemap (io/file (str base-output-path "sitemap.xml")))))
+  (let [sitemap-path   (str base-output-path "sitemap.xml")
+        sitemap-output (->> site-categories
+                            (categories->sitemap base-output-path))]
+    (when (resource-outdated? sitemap-path sitemap-output)
+      (info "Writing " sitemap-path)
+      (sitemap/save-sitemap (io/file sitemap-path) sitemap-output))))
 
 (defn to-disk
   [out-file output]
@@ -56,10 +67,6 @@
     (do
       (io/make-parents output-path)
       (to-disk output-path page-output))
-    (when (not= (sha-256 page-output) (sha-256 (slurp output-path)))
+    (when (resource-outdated? output-path page-output)
       (info "  writing" output-path)
       (to-disk output-path page-output))))
-
-(comment
-  (l/format-local-time (l/local-now) :year-month-day)
-)

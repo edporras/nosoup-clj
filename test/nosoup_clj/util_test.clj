@@ -46,6 +46,23 @@
       (.deleteOnExit sitemap)
       (is (.exists sitemap)))))
 
+(deftest resource-outdated?-test
+  (testing "Returns `true` if destination does not exist."
+    (with-tempfile [tmp]
+      (is (sut/resource-outdated? tmp "1")))))
+
+(deftest resource-outdated?-matching-file-exists-test
+  (testing "Returns `false` if destination exists and matches output."
+    (let [path "test/site/italian/index.html"
+          data (slurp path)]
+      (is (= false (sut/resource-outdated? path data))))))
+
+(deftest resource-outdated?-outdated-file-exists-test
+  (testing "Returns `true` if destination exists but output differs."
+    (let [path "test/site/italian/index.html"
+          data (str (slurp path) "blah")]
+      (is (sut/resource-outdated? path data)))))
+
 (deftest to-disk-test
   (testing "Writes file to disk and returns `true`."
     (with-tempfile [tmp]
