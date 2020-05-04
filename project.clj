@@ -1,4 +1,4 @@
-(defproject nosoup-clj "0.1.1-SNAPSHOT"
+(defproject nosoup-clj "0.1.1"
   :description "Site generator for nosoupforyou.com"
   :url "https://github.com/edporras/nosoup-clj/"
   :license {:name "MIT"

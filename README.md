@@ -1,4 +1,4 @@
-# nosoup-clj
+# nosoup-clj v0.1.1
 
 Site generator for https://www.nosoupforyou.com/, a listing of local &
 independent restaurants in Gainesville, FL I created in the early
