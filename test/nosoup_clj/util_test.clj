@@ -2,6 +2,7 @@
   (:require [clj-time.coerce    :as c]
             [clj-time.local     :as l]
             [clojure.java.io    :as io]
+            [clojure.string     :as str]
             [clojure.test       :refer [deftest is testing use-fixtures]]
             [nosoup-clj.core    :as nosoup]
             [nosoup-clj.util    :as sut]
@@ -101,4 +102,4 @@
         (->> (nosoup/generate-category-page category restaurants categories categories)
              (sut/output->disk tmp))
         (is (= (slurp tmp)
-               (slurp "test/site/italian/index.html")))))))
+               (str/trim (slurp "test/site/italian/index.html"))))))))

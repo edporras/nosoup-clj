@@ -1,9 +1,13 @@
 (ns nosoup-clj.core-test
-  (:require [clojure.test    :refer [deftest is testing]]
+  (:require [clojure.java.io :as io]
             [clojure.string  :as str]
-            [clojure.java.io :as io]
+            [clojure.spec.alpha     :as s]
+            [clojure.spec.gen.alpha :as gen]
+            [clojure.test    :refer [deftest is testing]]
+            [ring.util.codec :as codec :refer-only [form-encode]]
             [hickory.core    :as html]
-            [nosoup-clj.core :as sut]))
+            [nosoup-clj.core :as sut]
+            [nosoup-clj.spec :as spec]))
 
 (defn- html->hiccup
   [html-str]
@@ -81,15 +85,16 @@
       (is (= (html->hiccup output)
              [[:a {:href "/abc/"} "ABC"] " = " [:a {:href "/ghi/"} "GHI"]])))))
 
-(deftest restaurant-map-link-data-test
+(deftest restaurant-map-link-url-test
   (testing "Generate map link with form-encoded text."
-    (is (= (sut/restaurant-map-link-data {:name "A B C's" :city "Towns ville"})
-           ["https://maps.apple.com/?daddr=A+B+C%27s+Towns+ville+FL" "map"]))))
+    (is (= (sut/restaurant-map-link-url {:name "A B C's" :address "123 Main Rd." :city "Towns ville"})
+           (str sut/base-mapping-url "A+B+C%27s,Towns+ville,FL")))))
 
-(deftest restaurant-map-link-data-with-coords-test
-  (testing "Generate map link with `near` parameter when `:coords` present."
-    (is (= (sut/restaurant-map-link-data {:name "ABC" :city "Townsville" :coords [1.2, 2.3]})
-           ["https://maps.apple.com/?daddr=ABC+Townsville+FL&near=1.2,2.3" "map"]))))
+(deftest restaurant-map-link-url-with-coords-test
+  (testing "Generate map link including address when `:coords` present."
+    (let [rest   (assoc (gen/generate (s/gen ::spec/restaurant)) :coords (gen/generate (s/gen :restaurant/coords)))
+          markup (sut/restaurant-map-link-url rest)]
+      (is (str/includes? markup (codec/form-encode (:address rest)))))))
 
 (deftest twitter-link-data-test
   (testing "Generate twitter link data."
@@ -134,9 +139,7 @@
 
 (deftest restaurant-by-category-all-test
   (testing "Restaurant list is not filtered when given `:all`"
-    (let [restaurants [{:name "Restaurant 1" :address "A" :city "A" :zip "12345" :phone "123 456-7890" :categories #{:italian}}
-                       {:name "Restaurant 2" :address "B" :city "B" :zip "12345" :phone "123 456-7890" :categories #{:mexican}}
-                       {:name "Restaurant 3" :address "C" :city "C" :zip "12345" :phone "123 456-7890" :categories #{:american}}]]
+    (let [restaurants (gen/generate (s/gen ::spec/restaurants))]
       (is (= (sut/restaurant-by-category restaurants :all)
              restaurants)))))
 
@@ -150,15 +153,13 @@
                [:h2 {} "Rest Name"]
                [:div
                 {:class "info"}
-                "123 456-7890" [:br {}]
-                [:address {} "B" [:br {}] "C, FL 22222"]
-                [:div
-                 {:class "links"}
-                 [:a
-                  {:href "https://maps.apple.com/?daddr=Rest+Name+C+FL",
-                   :rel "noopener noreferrer",
-                   :target "_blank"}
-                  "map"]]
+                [:a {:href "tel:+1-123-456-7890"} "123 456-7890"]
+                [:address {} 
+                 [:a {:href (str sut/base-mapping-url "Rest+Name,C,FL")
+                      :rel "noopener noreferrer"
+                      :target "_blank"}
+                  "B" [:br {}] "C, FL 22222"]]
+                [:div {:class "links"}]
                 [:div {:class "cats"} [:br {}]]]]])))))
 
 (deftest restaurants->html-single-category-with-alias-test
@@ -177,10 +178,10 @@
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)
           twitter   (-> (map html/as-hickory (html/parse-fragment output))
                         first
-                        (get-in [:content 1 :content 3 :content 2])
+                        (get-in [:content 1 :content 2 :content 0])
                         (dissoc :type :tag))]
       (is (= twitter
-             {:attrs {:href "https://twitter.com/rn", :rel "noopener noreferrer", :target "_blank"},
+             {:attrs {:href (str sut/base-twitter-url "rn"), :rel "noopener noreferrer", :target "_blank"},
               :content ["@rn"]})))))
 
 (deftest generate-category-page-head-includes-title-test
@@ -240,7 +241,7 @@
                                        [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
                                        {:italian "Italian"}
                                        {:italian "Italian"})
-           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/styles.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/searchbar.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\">123 456-7890<br><address>Address 1<br>City, FL 12345</address><div class=\"links\"><a href=\"https://maps.apple.com/?daddr=Test+1+City+FL\" rel=\"noopener noreferrer\" target=\"_blank\">map</a></div><div class=\"cats\"><br /></div></div></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
+           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/styles.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div><div class=\"cats\"><br /></div></div></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
 
 (deftest generate-category-page-for-all-test
   (testing "Generating HTML from category + restaurant data with category `:all`."
@@ -248,7 +249,7 @@
                                        [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
                                        {:italian "Italian"}
                                        {:italian "Italian"})
-           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/styles.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/searchbar.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\">123 456-7890<br><address>Address 1<br>City, FL 12345</address><div class=\"links\"><a href=\"https://maps.apple.com/?daddr=Test+1+City+FL\" rel=\"noopener noreferrer\" target=\"_blank\">map</a></div><div class=\"cats\">Under: <a href=\"/italian/\">Italian</a></div></div></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
+           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/styles.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div><div class=\"cats\">Under: <a href=\"/italian/\">Italian</a></div></div></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
 
 (deftest generate-category-restaurant-list-test
   (testing "Generate category to restaurant list map."

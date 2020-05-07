@@ -19,7 +19,7 @@
 (def base-title (str "No Soup For You - " site-city))
 
 ;; turns out this falls-back to google if the device doesn't support apple maps
-(def base-mapping-url "https://maps.apple.com/?daddr=")
+(def base-mapping-url "https://maps.google.com/?daddr=")
 (def base-twitter-url "https://twitter.com/")
 
 (defn read-categories-list
@@ -72,20 +72,16 @@
          vec
          (str/join separator))))
 
-(defn restaurant-map-link-data
-  "Generate the map link tuple for the restaurant's address to be passed to `restaurant-links`."
-  [{:keys [name city coords]}]
+(defn restaurant-map-link-url
+  "Generate the map urk for a restaurant."
+  [{:keys [name address city coords]}]
   {:pre [string? name string? city (s/nilable (s/valid? :restaurant/coords coords))]}
-  [(str base-mapping-url
-         (str #_"\"" (codec/form-encode name) #_"\""
-              (codec/form-encode (str " " city " " site-state))
-              (when coords
-                (str "&near=" (first coords) "," (last coords))))
-         #_(codec/form-encode (str "\""(:name restaurant) "\" " (:city restaurant) " " site-state))
-         #_(codec/form-encode (:name restaurant))
-         #_(if-let [coords (:coords restaurant)]
-             (str "&near=" (first coords) "," (last coords))
-             (codec/form-encode (str " " (:city restaurant) " " site-state)))) "map"])
+  (str base-mapping-url
+       (->> [name (when coords address) city site-state]
+              (remove nil?)
+              (vec)
+              (map #(codec/form-encode %))
+              (str/join ","))))
 
 (defn twitter-link-data
   "Generate the map link tuple for the twitter link, to be passed to `restaurant-links`."
@@ -117,15 +113,17 @@
   [restaurants full-category-list selected-category-key]
   {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) keyword? selected-category-key]}
   (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
-          (let [restaurant-name (or alias name)]
+          (let [restaurant-name (or alias name)
+                map-link        [(restaurant-map-link-url r)
+                                 (html address [:br] city ", " site-state " " zip)]]
             [:li
              [:h2 restaurant-name]
-             [:div {:class "info"} phone [:br]
-              [:address address [:br] city ", " site-state " " zip]
+             [:div {:class "info"}
+              [:a {:href (str "tel:+1-" (str/replace phone #" " "-"))} phone]
+              [:address (link-data->html map-link)]
               [:div {:class "links"}
                (->> [
                      [uri "website"]                                       ;; restaurant's website
-                     (restaurant-map-link-data r)                          ;; map link
                      (twitter-link-data twitter)                           ;; twitter link
                      ]
                     (restaurant-links " | "))]
@@ -151,7 +149,7 @@
                            (str " " category-str)))}]
    [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,user-scalable=no"}]
    (page/include-css "/css/styles.css")
-   (page/include-js "/js/searchbar.js")])
+   (page/include-js "/js/site.js")])
 
 (defn generate-category-page
   "Generate page output for the selected category using the filtered list of restaurants and categories."
