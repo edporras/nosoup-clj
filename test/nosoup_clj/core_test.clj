@@ -59,31 +59,24 @@
 
 (deftest restaurant-links-single-entry-test
   (testing "Generation of list of links with a single entry (separator not used)."
-    (let [output (sut/restaurant-links " * " [["/abc/" "ABC"]])]
-      (is (= (html->hiccup output)
-             [[:a {:href "/abc/"} "ABC"]])))))
+    (is (= (sut/restaurant-links "Test: " " * " [["/abc/" "ABC"]])
+           (list "Test: " "<a href=\"/abc/\">ABC</a>")))))
 
 (deftest restaurant-links-multiple-entries-test
   (testing "Generation of list of links with multiple entries should include separator."
-    (let [output (sut/restaurant-links " + " [["/abc/" "ABC"] ["/def/" "DEF"] ["/ghi/" "GHI"]])]
-      (is (= (html->hiccup output)
-             [[:a {:href "/abc/"} "ABC"]
-              " + "
-              [:a {:href "/def/"} "DEF"]
-              " + "
-              [:a {:href "/ghi/"} "GHI"]])))))
+    (is (= (sut/restaurant-links "Test: " " + " [["/abc/" "ABC"] ["/def/" "DEF"] ["/ghi/" "GHI"]])
+           (list "Test: "
+                 "<a href=\"/abc/\">ABC</a> + <a href=\"/def/\">DEF</a> + <a href=\"/ghi/\">GHI</a>")))))
 
 (deftest restaurant-links-nil-url-dropped-test
   (testing "Generation of restaurant links with `nil` url value is dropped."
-    (let [output (sut/restaurant-links " / " [["/abc/" "ABC"] [nil "DEF"] ["/ghi/" "GHI"]])]
-      (is (= (html->hiccup output)
-             [[:a {:href "/abc/"} "ABC"] " / " [:a {:href "/ghi/"} "GHI"]])))))
+    (is (= (sut/restaurant-links "Test: " " / " [["/abc/" "ABC"] [nil "DEF"] ["/ghi/" "GHI"]])
+           (list "Test: " "<a href=\"/abc/\">ABC</a> / <a href=\"/ghi/\">GHI</a>")))))
 
 (deftest restaurant-links-nil-entry-dropped-test
   (testing "Generation of restaurant links with `nil` entry is dropped."
-    (let [output (sut/restaurant-links " = " [["/abc/" "ABC"] nil ["/ghi/" "GHI"]])]
-      (is (= (html->hiccup output)
-             [[:a {:href "/abc/"} "ABC"] " = " [:a {:href "/ghi/"} "GHI"]])))))
+    (is (= (sut/restaurant-links "Test: " " = " [["/abc/" "ABC"] nil ["/ghi/" "GHI"]])
+           (list "Test: " "<a href=\"/abc/\">ABC</a> = <a href=\"/ghi/\">GHI</a>")))))
 
 (deftest restaurant-map-link-url-test
   (testing "Generate map link with form-encoded text."
@@ -108,26 +101,22 @@
 (deftest restaurant-category-listing-single-all-test
   (testing "Category list with single entry, `:all` selected, creates link output with 'Under'."
     (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
-          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
-          output     (sut/restaurant-category-listing rest categories :all)]
-      (is (= (html->hiccup output)
-             ["Under: " [:a {:href "/mexican/"} "Mexican"]])))))
+          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}]
+      (is (= (sut/restaurant-category-listing rest categories :all)
+             (list "Under: " "<a href=\"/mexican/\">Mexican</a>"))))))
 
 (deftest restaurant-category-listing-single-selected-test
-  (testing "Category list with single entry, same selected, creates '<br />' for spacing."
+  (testing "Category list with single entry, same selected, generates &nbsp; for spacing."
     (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
-          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
-          output     (sut/restaurant-category-listing rest categories :mexican)]
-      (is (= (html->hiccup output)
-             [[:br {}]])))))
+          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}]
+      (is (= "&nbsp" (sut/restaurant-category-listing rest categories :mexican))))))
 
 (deftest restaurant-category-listing-multiple-other-selected-test
   (testing "Category list with multiple entries, one selected, creates link output with 'Also under'."
     (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican :italian}}
-          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
-          output     (sut/restaurant-category-listing rest categories :mexican)]
-      (is (= (html->hiccup output)
-             ["Also under: " [:a {:href "/italian/"} "Italian"]])))))
+          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}]
+      (is (= (sut/restaurant-category-listing rest categories :mexican)
+             (list "Also under: " "<a href=\"/italian/\">Italian</a>"))))))
 
 (deftest restaurant-by-category-single-category-test
   (testing "Restaurant list is filtered by the given category."
@@ -159,8 +148,8 @@
                       :rel "noopener noreferrer"
                       :target "_blank"}
                   "B" [:br {}] "C, FL 22222"]]
-                [:div {:class "links"}]
-                [:div {:class "cats"} [:br {}]]]]])))))
+                [:div {:class "links"}]]
+               [:footer {} " "]]])))))
 
 (deftest restaurants->html-single-category-with-alias-test
   (testing "Restaurant listing output with single category and an alias uses alias in heading."
@@ -178,7 +167,7 @@
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)
           twitter   (-> (map html/as-hickory (html/parse-fragment output))
                         first
-                        (get-in [:content 1 :content 2 :content 0])
+                        (get-in [:content 1 :content 2 :content 1])
                         (dissoc :type :tag))]
       (is (= twitter
              {:attrs {:href (str sut/base-twitter-url "rn"), :rel "noopener noreferrer", :target "_blank"},
@@ -241,7 +230,7 @@
                                        [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
                                        {:italian "Italian"}
                                        {:italian "Italian"})
-           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/styles.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div><div class=\"cats\"><br /></div></div></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
+           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>&nbsp</footer></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
 
 (deftest generate-category-page-for-all-test
   (testing "Generating HTML from category + restaurant data with category `:all`."
@@ -249,7 +238,7 @@
                                        [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
                                        {:italian "Italian"}
                                        {:italian "Italian"})
-           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/styles.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div><div class=\"cats\">Under: <a href=\"/italian/\">Italian</a></div></div></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
+           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0,user-scalable=no\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul id=\"listing\"><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>Under: <a href=\"/italian/\">Italian</a></footer></li></ul></div><footer><p id=\"about\">This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
 
 (deftest generate-category-restaurant-list-test
   (testing "Generate category to restaurant list map."

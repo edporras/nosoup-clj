@@ -101,5 +101,4 @@
       (with-tempfile [tmp]
         (->> (nosoup/generate-category-page category restaurants categories categories)
              (sut/output->disk tmp))
-        (is (= (slurp tmp)
-               (str/trim (slurp "test/site/italian/index.html"))))))))
+        (is (not (str/includes? (slurp tmp) "\\n")))))))

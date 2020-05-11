@@ -64,13 +64,14 @@
 (defn restaurant-links
   "Using a collection of vectors of `[uri text]` entries, generate their
   string output separated by `separator` if there is more than one."
-  [separator link-data]
+  [label separator link-data]
   {:pre [string? separator vector? link-data]}
   (let [filtered-link-data (remove #(or (nil? %) (nil? (first %))) link-data)]
-    (->> (for [link filtered-link-data]
-           (link-data->html link))
-         vec
-         (str/join separator))))
+    (when (seq filtered-link-data)
+      (list label (->> (for [link filtered-link-data]
+                             (link-data->html link))
+                           vec
+                           (str/join separator))))))
 
 (defn restaurant-map-link-url
   "Generate the map urk for a restaurant."
@@ -100,13 +101,12 @@
                                         ["Under: "      categories]
                                         ["Also under: " (remove #{selected-category-key} categories)])]
     (if (seq restaurant-categories)
-      (let [links (->> restaurant-categories
-                       (mapv #(let [category-str (get full-categories-list %)]
-                                (vec [(str "/" (name %) "/") category-str])))
-                       (sort)
-                       (restaurant-links ", "))]
-        (html label links))
-      (html [:br]))))
+      (->> restaurant-categories
+           (mapv #(let [category-str (get full-categories-list %)]
+                    (vec [(str "/" (name %) "/") category-str])))
+           (sort)
+           (restaurant-links label ", "))
+      "&nbsp")))
 
 (defn restaurants->html
   "Generate page output for a restaurant listing based on the selected category."
@@ -122,12 +122,12 @@
               [:a {:href (str "tel:+1-" (str/replace phone #" " "-"))} phone]
               [:address (link-data->html map-link)]
               [:div {:class "links"}
-               (->> [
-                     [uri "website"]                                       ;; restaurant's website
-                     (twitter-link-data twitter)                           ;; twitter link
-                     ]
-                    (restaurant-links " | "))]
-              [:div {:class "cats"} (restaurant-category-listing r full-category-list selected-category-key)]]]))))
+               (restaurant-links "Links: " " | " [
+                                                  [uri "website"]             ;; restaurant's website
+                                                  (twitter-link-data twitter) ;; twitter link
+                                                  ])
+               ]]
+             [:footer (restaurant-category-listing r full-category-list selected-category-key)]]))))
 
 (defn generate-category-page-head
   "Generate the head portion of the page."
