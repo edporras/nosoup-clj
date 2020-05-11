@@ -148,7 +148,7 @@
                          (when-not (= :all category-k)
                            (str " " category-str)))}]
    [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,user-scalable=no"}]
-   (page/include-css "/css/styles.css")
+   (page/include-css "/css/site.css")
    (page/include-js "/js/site.js")])
 
 (defn generate-category-page
