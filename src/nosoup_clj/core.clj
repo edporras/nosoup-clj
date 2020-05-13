@@ -122,11 +122,11 @@
               [:a {:href (str "tel:+1-" (str/replace phone #" " "-"))} phone]
               [:address (link-data->html map-link)]
               [:div {:class "links"}
-               (restaurant-links "Links: " " | " [
-                                                  [uri "website"]             ;; restaurant's website
-                                                  (twitter-link-data twitter) ;; twitter link
-                                                  ])
-               ]]
+               (restaurant-links "Links: "
+                                 " | "
+                                 [[uri "website"]             ;; restaurant's website
+                                  (twitter-link-data twitter) ;; twitter link
+                                  ])]]
              [:footer (restaurant-category-listing r full-category-list selected-category-key)]]))))
 
 (defn generate-category-page-head
