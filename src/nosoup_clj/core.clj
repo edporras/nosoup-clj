@@ -147,7 +147,7 @@
                          " Local Independently-owned Restaurants"
                          (when-not (= :all category-k)
                            (str " " category-str)))}]
-   [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0,user-scalable=no"}]
+   [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0"}]
    (page/include-css "/css/site.css")
    (page/include-js "/js/site.js")])
 
@@ -162,9 +162,9 @@
                 [:p "Locally-owned restaurants, cafes, and grocers."]
                 (categories->html filtered-category-list category-k)]
                [:div {:id "content"}
-                [:ul {:id "listing"}
+                [:ul
                  (restaurants->html filtered-restaurants full-category-list category-k)]]
-               [:footer [:p {:id "about"}
+               [:footer [:p
                          "This is a listing of independent businesses in " site-city-state ". If you own or know "
                          "of a business you'd like to see listed, please contact: nsfy at digressed dot net or "
                          "via Twitter at " (link-data->html (twitter-link-data "NSFYgnv")) "."]]]))
