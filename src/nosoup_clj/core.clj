@@ -13,10 +13,7 @@
            [java.text Collator])
   (:gen-class))
 
-(def site-city "Gainesville")
-(def site-state "FL")
-(def site-city-state (str site-city ", " site-state))
-(def base-title (str "No Soup For You - " site-city))
+(def base-title (str "No Soup For You - Gainesville"))
 
 ;; turns out this falls-back to google if the device doesn't support apple maps
 (def base-mapping-url "https://maps.google.com/?daddr=")
@@ -78,7 +75,7 @@
   [{:keys [name address city coords]}]
   {:pre [string? name string? city (s/nilable (s/valid? :restaurant/coords coords))]}
   (str base-mapping-url
-       (->> [name (when coords address) city site-state]
+       (->> [name (when coords address) city "FL"]
               (remove nil?)
               (vec)
               (map #(codec/form-encode %))
@@ -115,7 +112,7 @@
   (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
           (let [restaurant-name (or alias name)
                 map-link        [(restaurant-map-link-url r)
-                                 (html address [:br] city ", " site-state " " zip)]]
+                                 (html address [:br] city ", FL " zip)]]
             [:li
              [:h2 restaurant-name]
              [:div {:class "info"}
@@ -138,13 +135,11 @@
                    (str base-title " - " category-str))]
    [:meta {:name "author" :content "Ed Porras"}]
    [:meta {:name "description"
-           :content (str "Guide of independent restaurants and grocers in "
-                         site-city-state
+           :content (str "Guide of independent restaurants and grocers in Gainesville, FL"
                          (when-not (= :all category-k)
                            (str " under the " category-str " category")))}]
    [:meta {:name "keywords"
-           :content (str site-city
-                         " Local Independently-owned Restaurants"
+           :content (str "Gainesville Local Independently-owned Restaurants"
                          (when-not (= :all category-k)
                            (str " " category-str)))}]
    [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0"}]
@@ -158,14 +153,14 @@
               (generate-category-page-head category)
               [:body {:onload "load();"}
                [:header
-                [:h1 [:img {:src "/img/logo.png" :alt (str "Dining in " site-city) :width "293" :height "42"}]]
+                [:h1 [:img {:src "/img/logo.png" :alt "Dining in Gainesville" :width "293" :height "42"}]]
                 [:p "Locally-owned restaurants, cafes, and grocers."]
                 (categories->html filtered-category-list category-k)]
                [:div {:id "content"}
                 [:ul
                  (restaurants->html filtered-restaurants full-category-list category-k)]]
                [:footer [:p
-                         "This is a listing of independent businesses in " site-city-state ". If you own or know "
+                         "This is a listing of independent businesses in Gainesville, FL. If you own or know "
                          "of a business you'd like to see listed, please contact: nsfy at digressed dot net or "
                          "via Twitter at " (link-data->html (twitter-link-data "NSFYgnv")) "."]]]))
 
