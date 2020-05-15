@@ -21,6 +21,7 @@
 (s/def :restaurant/address ::non-empty-string)
 (s/def :restaurant/city ::non-empty-string)
 (s/def :restaurant/twitter ::non-empty-string)
+(s/def :restaurant/instagram ::non-empty-string)
 
 ;; more complex ones
 (def category-keys (set (keys (util/read-config init/categories-config)))) ;; TODO: avoid reading file again
@@ -69,6 +70,7 @@
                             :opt-un [:restaurant/alias
                                      :restaurant/uri
                                      :restaurant/twitter
+                                     :restaurant/instagram
                                      :restaurant/dine-opts
                                      :restaurant/price
                                      :restaurant/opts
