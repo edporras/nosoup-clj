@@ -1,4 +1,4 @@
-# nosoup-clj v0.1.1
+# nosoup-clj v0.1.2
 
 Site generator for https://www.nosoupforyou.com/, a listing of local &
 independent restaurants in Gainesville, FL I created in the early
@@ -13,7 +13,6 @@ configuration.
 I can't imagine anyone will want to do this but, assuming you've
 created your own configuration, you generate the static pages with:
 
-    $ java -jar nosoup-clj-0.1.0-standalone.jar gen path-to-restaurants-config.edn
+    $ java -jar nosoup-clj-0.1.2-standalone.jar gen path-to-restaurants-config.edn
 
-See [test/restaurants.edn](test/restaurants.edn)
-for an example.
+See [test/restaurants.edn](test/restaurants.edn) for an example.
