@@ -4,11 +4,11 @@
   :license {:name "MIT"
             :url "https://opensource.org/licenses/mit-license.php"}
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/tools.cli "0.4.2"]
+                 [org.clojure/tools.cli "1.0.194"]
 
                  [hiccup "1.0.5"]
-                 [ring/ring-codec "1.1.1"]
-                 [clj-time "0.15.2"]
+                 [ring/ring-codec "1.1.2"]
+                 [clojure.java-time "0.3.2"]
                  [sitemap "0.4.0"]
                  [digest "1.4.9"]
 
@@ -17,11 +17,11 @@
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
              :test {:dependencies [[hickory "0.7.1"]
-                                   [org.clojure/test.check "0.9.0"]
+                                   [org.clojure/test.check "1.0.0"]
                                    [com.oscaro/tools-io "0.3.19"]]}
              :dev  {:dependencies [[hickory "0.7.1"]
-                                   [org.clojure/test.check "0.9.0"]
+                                   [org.clojure/test.check "1.0.0"]
                                    [com.oscaro/tools-io "0.3.19"]]}
              :repl {:dependencies [[hickory "0.7.1"]
-                                   [org.clojure/test.check "0.9.0"]
+                                   [org.clojure/test.check "1.0.0"]
                                    [com.oscaro/tools-io "0.3.19"]]}})

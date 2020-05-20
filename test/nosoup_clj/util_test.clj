@@ -1,26 +1,28 @@
 (ns nosoup-clj.util-test
-  (:require [clj-time.coerce    :as c]
-            [clj-time.local     :as l]
-            [clojure.java.io    :as io]
+  (:require [clojure.java.io    :as io]
             [clojure.string     :as str]
             [clojure.test       :refer [deftest is testing use-fixtures]]
+            [java-time          :as t]
             [nosoup-clj.core    :as nosoup]
             [nosoup-clj.util    :as sut]
-            [tools.io           :refer [with-tempfile]])
-  (:import  [java.util Date]))
+            [tools.io           :refer [with-tempfile]]))
 
 (def test-site-baseroot-path "test/site/")
 (def test-site-sitemap-xml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-14</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-29</lastmod><changefreq>monthly</changefreq></url></urlset>")
 
 (defn timestamp-test-files
   [all-tests]
-  (doseq [[f stamp] [["test/site/italian/index.html" "2020-04-14"]
-                     ["test/site/mexican/index.html" "2020-04-29"]]]
+  (doseq [[f stamp] [["test/site/italian/index.html" (t/local-date "2020-04-14")]
+                     ["test/site/mexican/index.html" (t/local-date "2020-04-29")]]]
     (let [file     (io/file f)
           mod-time (-> (.lastModified file)
-                       (l/format-local-time :year-month-day))]
+                       (t/instant)
+                       (t/local-date (t/zone-id)))]
       (when-not (= mod-time stamp)
-        (.setLastModified file (c/to-long stamp)))))
+        (.setLastModified file (-> stamp
+                                   (t/zoned-date-time (t/zone-id))
+                                   (t/java-date)
+                                   (t/to-millis-from-epoch))))))
   (all-tests))
 
 (use-fixtures :once timestamp-test-files)
@@ -89,9 +91,9 @@
       (let [output   "[1 2 3 4]"
             out-file (io/file tmp)]
         (sut/to-disk out-file output) ;; pre-write file to disk
-        (let [mod-date-before (Date. (.lastModified out-file))
+        (let [mod-date-before (.lastModified out-file)
               status          (sut/output->disk out-file output)]
-          (is (and (nil? status) (= mod-date-before (Date. (.lastModified out-file))))))))))
+          (is (and (nil? status) (= mod-date-before (.lastModified out-file)))))))))
 
 (deftest output->disk-uses-correct-print-test
   (testing "Writes file with correct whitespaces."

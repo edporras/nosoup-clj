@@ -1,12 +1,11 @@
 (ns nosoup-clj.util
-  (:require [clj-time.local          :as l]
+  (:require [java-time               :as t]
             [clojure.edn             :as edn]
             [clojure.java.io         :as io]
             [clojure.string          :as str]
             [digest                  :refer [sha-256]]
             [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
             [taoensso.timbre         :as timbre :refer [info]])
-  (:import  [java.util Date])
   (:gen-class))
 
 (defn read-config
@@ -15,11 +14,13 @@
   (with-open [r (io/reader file)]
     (edn/read (java.io.PushbackReader. r))))
 
+(def time-zone-id (t/zone-id))
 (defn file-mdate
-  "Get the modified date from a file."
+  "Get the modified date from a file in YYYY-MM-DD string format."
   [file]
-  (-> (Date. (.lastModified (io/file file)))
-      (l/format-local-time :year-month-day)))
+  (t/format :iso-local-date (-> (.lastModified (io/file file))
+                                (t/instant)
+                                (t/offset-date-time time-zone-id))))
 
 (defn resource-outdated?
   "Checks if the file at OUTPUT-PATH exists. If so, returns `false` if
