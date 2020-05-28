@@ -24,10 +24,10 @@
 (s/def :restaurant/instagram ::non-empty-string)
 
 ;; more complex ones
-(def category-keys (set (keys (util/read-config init/categories-config)))) ;; TODO: avoid reading file again
-(s/def :restaurant/categories (s/with-gen #(and (set? %) (set/subset? % category-keys) (not= % :all))
-                                (fn [] (gen/not-empty
-                                       (gen/set (gen/elements (vec category-keys)) {:max-elements 3})))))
+(s/def :restaurant/categories (let [category-keys (set (keys (util/read-config init/categories-config)))]  ;; TODO: avoid reading file again
+                                (s/with-gen #(and (set? %) (set/subset? % category-keys) (not= % :all))
+                                  (fn [] (gen/not-empty
+                                         (gen/set (gen/elements (vec category-keys)) {:max-elements 3}))))))
 
 (s/def :restaurant/zip (s/with-gen #(and (string? %) (re-matches #"[0-9]{5}" %))
                          #(gen/fmap (fn [v] (str/join v))
@@ -45,17 +45,17 @@
                                                (gen/not-empty (gen/vector (gen/char-alpha) 2 3))
                                                (gen/string-alphanumeric)))))
 
-(def nsfy-dining-opts #{:dine-in :take-out :delivery :catering :food-truck})
-(s/def :restaurant/dine-opts (s/with-gen #(and (set? %) (set/subset? % nsfy-dining-opts))
-                               (fn [] (gen/not-empty (gen/set (gen/elements (vec nsfy-dining-opts)))))))
+(s/def :restaurant/dine-opts (let [nsfy-dining-opts #{:dine-in :take-out :delivery :catering :food-truck}]
+                               (s/with-gen #(and (set? %) (set/subset? % nsfy-dining-opts))
+                                 (fn [] (gen/not-empty (gen/set (gen/elements (vec nsfy-dining-opts))))))))
 
-(def nsfy-rest-opts #{:wifi :late-night :closed :need-verification})
-(s/def :restaurant/opts (s/with-gen #(and (set? %) (set/subset? % nsfy-rest-opts))
-                          (fn [] (gen/set (gen/elements (vec nsfy-rest-opts))))))
+(s/def :restaurant/opts (let [nsfy-rest-opts #{:wifi :late-night :closed :need-verification}]
+                          (s/with-gen #(and (set? %) (set/subset? % nsfy-rest-opts))
+                            (fn [] (gen/set (gen/elements (vec nsfy-rest-opts)))))))
 
-(def price-opts #{:$ :$$ :$$$ :$$$$})
-(s/def :restaurant/price (s/with-gen #(contains? price-opts %)
-                           #(gen/elements (vec price-opts))))
+(s/def :restaurant/price (let [price-opts #{:$ :$$ :$$$ :$$$$}]
+                           (s/with-gen price-opts
+                             #(gen/elements (vec price-opts)))))
 
 (s/def :restaurant/coord (s/with-gen double?
                            (fn [] (gen/double* {:infinite? false :NaN? false}))))
