@@ -1,7 +1,7 @@
 (ns nosoup-clj.util-test
   (:require [clojure.java.io    :as io]
             [clojure.string     :as str]
-            [clojure.test       :refer [deftest is testing use-fixtures]]
+            [clojure.test       :refer [deftest is are testing use-fixtures]]
             [java-time          :as t]
             [nosoup-clj.core    :as nosoup]
             [nosoup-clj.util    :as sut]
@@ -32,15 +32,12 @@
     (is (= (sut/file-mdate "test/site/italian/index.html")
            "2020-04-14"))))
 
-(deftest categories->sitemap-test
+(deftest categories->sitemap
   (testing "Sitemap generation from a filtered and sorted category list."
-    (is (= (sut/categories->sitemap test-site-baseroot-path {:italian "Italian" :mexican "Mexican"})
-           test-site-sitemap-xml))))
+    (are [cat-list] (= test-site-sitemap-xml (sut/categories->sitemap test-site-baseroot-path cat-list))
 
-(deftest categories->sitemap-omits-all-test
-  (testing "Sitemap generation from a filtered and sorted category list omits `:all` entry."
-    (is (= (sut/categories->sitemap test-site-baseroot-path {:all "All" :italian "Italian" :mexican "Mexican"})
-           test-site-sitemap-xml))))
+      {:italian "Italian" :mexican "Mexican"}
+      {:all "All" :italian "Italian" :mexican "Mexican"})))
 
 (deftest generate-sitemap-test
   (testing "Sitemap is written to disk at given path."
@@ -58,7 +55,7 @@
   (testing "Returns `false` if destination exists and matches output."
     (let [path "test/site/italian/index.html"
           data (slurp path)]
-      (is (= false (sut/resource-outdated? path data))))))
+      (is (not (sut/resource-outdated? path data))))))
 
 (deftest resource-outdated?-outdated-file-exists-test
   (testing "Returns `true` if destination exists but output differs."

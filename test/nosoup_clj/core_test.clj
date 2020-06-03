@@ -1,13 +1,13 @@
 (ns nosoup-clj.core-test
-  (:require [clojure.java.io :as io]
-            [clojure.string  :as str]
+  (:require [clojure.java.io        :as io]
+            [clojure.string         :as str]
             [clojure.spec.alpha     :as s]
             [clojure.spec.gen.alpha :as gen]
-            [clojure.test    :refer [deftest is testing]]
-            [ring.util.codec :as codec :refer-only [form-encode]]
-            [hickory.core    :as html]
-            [nosoup-clj.core :as sut]
-            [nosoup-clj.spec :as spec]))
+            [clojure.test           :refer [deftest is are testing]]
+            [ring.util.codec        :as codec :refer-only [form-encode]]
+            [hickory.core           :as html]
+            [nosoup-clj.core        :as sut]
+            [nosoup-clj.spec        :as spec]))
 
 (defn- html->hiccup
   [html-str]
@@ -16,18 +16,18 @@
        (mapv html/as-hiccup)))
 
 (def test-categories (io/file "test/categories.edn"))
-(deftest read-categories-list-adds-all-entry-test
+(deftest read-categories-list-adds-all-entry
   (testing "Entry for `:all` is added to read categories."
     (is (= "All" (:all (sut/read-categories-list test-categories))))))
 
 (def test-restaurants (io/file "test/restaurants.edn"))
-(deftest read-restaurant-list-filters-closed-test
+(deftest read-restaurant-list-filters-closed
   (testing "Restaurants marked `:closed` are filtered."
     (let [restaurants (sut/read-restaurant-list test-restaurants)]
       (is (empty? (->> restaurants
                        (filter #(contains? (:opts %) :closed))))))))
 
-(deftest categories->html-selected-test
+(deftest categories->html-selected
   (testing "Category options list selects the correct option."
     (is (= (sut/categories->html {:a "A" :mexican "Mexican" :c "C"} :mexican)
            [:nav
@@ -41,84 +41,71 @@
              [:input
               {:type "submit", :name "action", :id "search", :value "Search"}]]]))))
 
-(deftest link-data->html-test
+(deftest link-data->html
   (testing "Generate HTML output for a uri text tuple with the correct attributes."
-    (let [output (sut/link-data->html ["/abc/" "ABC"])]
-      (is (= (html->hiccup output)
-             [[:a {:href "/abc/"} "ABC"]])))))
+    (are [link-data expected] (= expected (html->hiccup (sut/link-data->html link-data)))
 
-(deftest link-data->html-with-external-link-test
-  (testing "Generate HTML output for a uri text tuple with the correct attributes for external links."
-    (let [output (sut/link-data->html ["http://abc.de/" "ABC"])]
-      (is (= (html->hiccup output)
-             [[:a
-               {:href "http://abc.de/",
-                :rel "noopener noreferrer",
-                :target "_blank"}
-               "ABC"]])))))
+      ["/abc/" "ABC"]          [[:a {:href "/abc/"} "ABC"]]
+      ["http://abc.de/" "ABC"] [[:a {:href "http://abc.de/",
+                                     :rel "noopener noreferrer",
+                                     :target "_blank"}
+                                 "ABC"]])))
 
-(deftest restaurant-links-single-entry-test
-  (testing "Generation of list of links with a single entry (separator not used)."
-    (is (= (sut/restaurant-links "Test: " " * " [["/abc/" "ABC"]])
-           (list "Test: " "<a href=\"/abc/\">ABC</a>")))))
+(deftest restaurant-links
+  (testing "Generation of list of links."
+    (are [label sep link-data expected] (= expected (sut/restaurant-links label sep link-data))
 
-(deftest restaurant-links-multiple-entries-test
-  (testing "Generation of list of links with multiple entries should include separator."
-    (is (= (sut/restaurant-links "Test: " " + " [["/abc/" "ABC"] ["/def/" "DEF"] ["/ghi/" "GHI"]])
-           (list "Test: "
-                 "<a href=\"/abc/\">ABC</a> + <a href=\"/def/\">DEF</a> + <a href=\"/ghi/\">GHI</a>")))))
+      "Test: " " * " [["/abc/" "ABC"]]
+      (list "Test: " "<a href=\"/abc/\">ABC</a>")
 
-(deftest restaurant-links-nil-url-dropped-test
-  (testing "Generation of restaurant links with `nil` url value is dropped."
-    (is (= (sut/restaurant-links "Test: " " / " [["/abc/" "ABC"] [nil "DEF"] ["/ghi/" "GHI"]])
-           (list "Test: " "<a href=\"/abc/\">ABC</a> / <a href=\"/ghi/\">GHI</a>")))))
+      "Test: " " + " [["/abc/" "ABC"] ["/def/" "DEF"] ["/ghi/" "GHI"]]
+      (list "Test: " "<a href=\"/abc/\">ABC</a> + <a href=\"/def/\">DEF</a> + <a href=\"/ghi/\">GHI</a>")
 
-(deftest restaurant-links-nil-entry-dropped-test
-  (testing "Generation of restaurant links with `nil` entry is dropped."
-    (is (= (sut/restaurant-links "Test: " " = " [["/abc/" "ABC"] nil ["/ghi/" "GHI"]])
-           (list "Test: " "<a href=\"/abc/\">ABC</a> = <a href=\"/ghi/\">GHI</a>")))))
+      "Test: " " / " [["/abc/" "ABC"] [nil "DEF"] ["/ghi/" "GHI"]]
+      (list "Test: " "<a href=\"/abc/\">ABC</a> / <a href=\"/ghi/\">GHI</a>")
 
-(deftest restaurant-map-link-url-test
+      "Test: " " = " [["/abc/" "ABC"] nil ["/ghi/" "GHI"]]
+      (list "Test: " "<a href=\"/abc/\">ABC</a> = <a href=\"/ghi/\">GHI</a>"))))
+
+(deftest restaurant-map-link-url
   (testing "Generate map link with form-encoded text."
     (is (= (sut/restaurant-map-link-url {:name "A B C's" :address "123 Main Rd." :city "Towns ville"})
            (str sut/base-mapping-url "A+B+C%27s,Towns+ville,FL")))))
 
-(deftest restaurant-map-link-url-with-coords-test
+(deftest restaurant-map-link-url-with-coords
   (testing "Generate map link including address when `:coords` present."
     (let [rest   (assoc (gen/generate (s/gen ::spec/restaurant)) :coords (gen/generate (s/gen :restaurant/coords)))
           markup (sut/restaurant-map-link-url rest)]
       (is (str/includes? markup (codec/form-encode (:address rest)))))))
 
-(deftest twitter-link-data-test
+(deftest twitter-link-data
   (testing "Generate twitter link data."
-    (is (= (sut/twitter-link-data "test")
-           [(str sut/base-twitter-url "test") "@test"]))))
+    (are [handle expected] (= expected (sut/twitter-link-data handle))
 
-(deftest twitter-link-data-with-nil-test
-  (testing "Generate twitter link data."
-    (is (nil? (sut/twitter-link-data nil)))))
+      "test" [(str sut/base-twitter-url "test") "@test"]
+      nil    nil)))
 
-(deftest restaurant-category-listing-single-all-test
-  (testing "Category list with single entry, `:all` selected, creates link output with 'Under'."
-    (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
-          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}]
-      (is (= (sut/restaurant-category-listing rest categories :all)
-             (list "Under: " "<a href=\"/mexican/\">Mexican</a>"))))))
+(deftest restaurant-category-listing
+  (testing "Restaurant category list with label and link."
+    (are [rest cats cuisine expected] (= expected (sut/restaurant-category-listing rest cats cuisine))
 
-(deftest restaurant-category-listing-single-selected-test
-  (testing "Category list with single entry, same selected, generates &nbsp; for spacing."
-    (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
-          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}]
-      (is (= "&nbsp" (sut/restaurant-category-listing rest categories :mexican))))))
+      {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
+      {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
+      :all
+      (list "Under: " "<a href=\"/mexican/\">Mexican</a>")
 
-(deftest restaurant-category-listing-multiple-other-selected-test
-  (testing "Category list with multiple entries, one selected, creates link output with 'Also under'."
-    (let [rest       {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican :italian}}
-          categories {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}]
-      (is (= (sut/restaurant-category-listing rest categories :mexican)
-             (list "Also under: " "<a href=\"/italian/\">Italian</a>"))))))
+      {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican}}
+      {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
+      :mexican
+      "&nbsp"
 
-(deftest restaurant-by-category-single-category-test
+      {:name "ABC" :address "" :city "" :zip "" :phone "" :categories #{:mexican :italian}}
+      {:a "A" :b "B" :c "C" :italian "Italian" :mexican "Mexican"}
+      :mexican
+      (list "Also under: " "<a href=\"/italian/\">Italian</a>"))))
+
+
+(deftest restaurant-by-category-single-category
   (testing "Restaurant list is filtered by the given category."
     (let [restaurants [{:name "Restaurant 1" :address "A" :city "A" :zip "12345" :phone "123 456-7890" :categories #{:italian}}
                        {:name "Restaurant 2" :address "B" :city "B" :zip "12345" :phone "123 456-7890" :categories #{:mexican}}
@@ -126,13 +113,13 @@
       (is (= (sut/restaurant-by-category restaurants :mexican)
              [{:name "Restaurant 2" :address "B" :city "B" :zip "12345" :phone "123 456-7890" :categories #{:mexican}}])))))
 
-(deftest restaurant-by-category-all-test
+(deftest restaurant-by-category-all
   (testing "Restaurant list is not filtered when given `:all`"
     (let [restaurants (gen/generate (s/gen ::spec/restaurants))]
       (is (= (sut/restaurant-by-category restaurants :all)
              restaurants)))))
 
-(deftest restaurants->html-single-category-test
+(deftest restaurants->html-single-category
   (testing "Restaurant listing output with single category."
     (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :categories #{:mexican}}]
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)]
@@ -151,7 +138,7 @@
                 [:div {:class "links"}]]
                [:footer {} " "]]])))))
 
-(deftest restaurants->html-single-category-with-alias-test
+(deftest restaurants->html-single-category-with-alias
   (testing "Restaurant listing output with single category and an alias uses alias in heading."
     (let [rest-list [{:name "Rest Name" :alias "Resty" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :categories #{:mexican}}]
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)
@@ -161,7 +148,7 @@
       (is (= h2-text
              ["Resty"])))))
 
-(deftest restaurants->html-single-category-with-twitter-test
+(deftest restaurants->html-single-category-with-twitter
   (testing "Restaurant listing output with single category and twitter link."
     (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :twitter "rn" :categories #{:mexican}}]
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)
@@ -173,7 +160,7 @@
              {:attrs {:href (str sut/base-twitter-url "rn"), :rel "noopener noreferrer", :target "_blank"},
               :content ["@rn"]})))))
 
-(deftest generate-category-page-head-includes-title-test
+(deftest generate-category-page-head-includes-title
   (testing "Generating head portion of page includes title tag."
     (let [output (sut/generate-category-page-head [:all "All"])]
       (is (= (->> output
@@ -181,7 +168,7 @@
                   count)
              1)))))
 
-(deftest generate-category-page-head-includes-meta-author-test
+(deftest generate-category-page-head-includes-meta-author
   (testing "Generating head portion of page includes author meta info."
     (let [output (sut/generate-category-page-head [:all "All"])]
       (is (= (->> output
@@ -190,7 +177,7 @@
                   count)
              1)))))
 
-(deftest generate-category-page-head-adds-category-to-keywords-test
+(deftest generate-category-page-head-adds-category-to-keywords
   (testing "Generating head portion of page when the category is set appends it to keyword meta."
     (let [category [:italian "Italian"]
           output   (sut/generate-category-page-head category)
@@ -201,7 +188,7 @@
                         first)]
       (is (str/includes? keywords (last category))))))
 
-(deftest generate-category-page-head-adds-category-to-description-test
+(deftest generate-category-page-head-adds-category-to-description
   (testing "Generating head portion of page when the category is set appends it to description meta."
     (let [category [:italian "Italian"]
           output   (sut/generate-category-page-head category)
@@ -212,7 +199,7 @@
                         first)]
       (is (str/includes? keywords (last category))))))
 
-(deftest generate-category-page-sets-lang-test
+(deftest generate-category-page-sets-lang
   (testing "Generated HTML for a page has language set to 'en'."
     (let [output  (sut/generate-category-page [:italian "Italian"]
                                               [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
@@ -224,53 +211,44 @@
       (is (= (get-in content [:attrs :lang])
              "en")))))
 
-(deftest generate-category-page-test
-  (testing "Generated HTML from category + restaurant data with selected category."
-    (is (= (sut/generate-category-page [:italian "Italian"]
-                                       [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
-                                       {:italian "Italian"}
-                                       {:italian "Italian"})
-           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>&nbsp</footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
+(deftest generate-category-page
+  (testing "Generated HTML from category + restaurant data."
+    (let [filtered-restaurants   [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
+          cats                   {:italian "Italian"}]
+      (are [selected-category expected] (= expected (sut/generate-category-page selected-category filtered-restaurants cats cats))
 
-(deftest generate-category-page-for-all-test
-  (testing "Generating HTML from category + restaurant data with category `:all`."
-    (is (= (sut/generate-category-page [:all "All"]
-                                       [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
-                                       {:italian "Italian"}
-                                       {:italian "Italian"})
-           "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>Under: <a href=\"/italian/\">Italian</a></footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
+        [:italian "Italian"]
+        "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>&nbsp</footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"
 
-(deftest generate-category-restaurant-list-test
+        [:all "All"]
+        "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>Under: <a href=\"/italian/\">Italian</a></footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net or via Twitter at <a href=\"https://twitter.com/NSFYgnv\" rel=\"noopener noreferrer\" target=\"_blank\">@NSFYgnv</a>.</p></footer></body></html>"))))
+
+(deftest generate-category-restaurant-list
   (testing "Generate category to restaurant list map."
-    (is (= (sut/generate-category-restaurant-list {:italian "Italian" :mexican "Mexican"}
-                                                  (sut/read-restaurant-list test-restaurants))
-           [[:italian '({:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}})]
-            [:mexican '({:name "Test 3" :address "Address 3" :city "City" :zip "12345" :phone "123 456-7892" :categories #{:mexican}}
-                        {:name "Test 4" :address "Address 4" :city "City" :zip "12345" :phone "123 456-7893" :categories #{:mexican}})]]))))
+    (let [rest-list (sut/read-restaurant-list test-restaurants)]
+      (are [categories expected] (= expected (sut/generate-category-restaurant-list categories rest-list))
 
-(deftest generate-category-restaurant-list-empty-test
-  (testing "Generate category to restaurant list map produces entry w/ empty list when none are found."
-    (is (= (sut/generate-category-restaurant-list {:american "American"}
-                                                  (sut/read-restaurant-list test-restaurants))
-           [[:american '()]]))))
+        {:italian "Italian" :mexican "Mexican"}
+        [[:italian '({:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}})]
+         [:mexican '({:name "Test 3" :address "Address 3" :city "City" :zip "12345" :phone "123 456-7892" :categories #{:mexican}}
+                     {:name "Test 4" :address "Address 4" :city "City" :zip "12345" :phone "123 456-7893" :categories #{:mexican}})]]
 
-(deftest filter-category-list-from-generated-restaurant-data-test
+        {:american "American"}
+        [[:american '()]]))))
+
+(deftest filter-category-list-from-generated-restaurant-data
   (testing  "Removes entries from the category list that didn't generate any page output."
-    (is (= (sut/filter-category-list-from-generated-restaurant-data [[:all '([])] [:italian '([])]] {:all "A" :italian "I" :mexican "M" :latin "L"})
-           {:all "A" :italian "I"}))))
+    (are [cat-rest-data cat-list expected] (= expected (sut/filter-category-list-from-generated-restaurant-data cat-rest-data cat-list))
 
-(deftest filter-category-list-from-generated-restaurant-data-returns-sorted-list-test
-  (testing  "Filtered category list is sorted."
-    (let [output (sut/filter-category-list-from-generated-restaurant-data [[:italian '([])] [:all '([])] [:vietnamese '([])]] {:all "A" :italian "I" :mexican "M" :latin "L" :chinese "C"})]
-      (is (= output
-             (into (sorted-map) output))))))
+      [[:all '([])] [:italian '([])]] {:all "A" :italian "I" :mexican "M" :latin "L"}
+      {:all "A" :italian "I"}
 
-(deftest category-page-output-path-for-root-test
-  (testing "Output path for main index page.")
-  (is (= (sut/category-page-output-path "a-path/" :all)
-         "a-path/index.html")))
+      [[:italian '([])] [:all '([])] [:chinese '([])]] {:all "A" :italian "I" :mexican "M" :latin "L" :chinese "C"}
+      (into (sorted-map) {:all "A" :italian "I" :chinese "C"}))))
 
-(deftest category-page-output-path-for-subcategory-test
-  (testing "Output path for sub-category index page includes subpath.")
-  (is (= (sut/category-page-output-path "a-path/" :italian)
-         "a-path/italian/index.html")))
+(deftest category-page-output-path
+  (testing "Output path for top-level and sub index pages.")
+  (are [expected-path subpath category] (= expected-path (sut/category-page-output-path subpath category))
+
+    "a-path/index.html" "a-path/" :all
+    "a-path/italian/index.html" "a-path/" :italian))

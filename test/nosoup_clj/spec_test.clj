@@ -1,5 +1,5 @@
 (ns nosoup-clj.spec-test
-  (:require [clojure.test                  :refer [deftest is]]
+  (:require [clojure.test                  :refer [deftest is are]]
             [clojure.spec.alpha            :as s]
             [clojure.test.check.generators :as gen]
             [nosoup-clj.spec               :as sut]))
@@ -37,7 +37,10 @@
   (is (s/valid? :restaurant/dine-opts (gen/generate (s/gen :restaurant/dine-opts)))))
 
 (deftest restaurant-price-gen-test
-  (is (s/valid? :restaurant/price (gen/generate (s/gen :restaurant/price)))))
+  (are [p] (s/valid? :restaurant/price p)
+
+    (gen/generate (s/gen :restaurant/price))
+    :$))
 
 (deftest restaurant-coords-gen-test
   (is (s/valid? :restaurant/coords (gen/generate (s/gen :restaurant/coords)))))

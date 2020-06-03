@@ -53,9 +53,7 @@
                           (s/with-gen #(and (set? %) (set/subset? % nsfy-rest-opts))
                             (fn [] (gen/set (gen/elements (vec nsfy-rest-opts)))))))
 
-(s/def :restaurant/price (let [price-opts #{:$ :$$ :$$$ :$$$$}]
-                           (s/with-gen price-opts
-                             #(gen/elements (vec price-opts)))))
+(s/def :restaurant/price #{:$ :$$ :$$$ :$$$$})
 
 (s/def :restaurant/coord (s/with-gen double?
                            (fn [] (gen/double* {:infinite? false :NaN? false}))))
