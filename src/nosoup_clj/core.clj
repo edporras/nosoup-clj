@@ -39,7 +39,7 @@
 (defn categories->html
   "Generate the navigation pulldown selector from the category list."
   [categories selected-category]
-  {:pre [(s/valid? ::spec/categories categories) keyword? selected-category]}
+  {:pre [(s/valid? ::spec/categories categories) (keyword? selected-category)]}
   [:nav [:form {:name "catlist" :method :get :action "/c"}
          [:select {:name "cat" :size 1 :onchange "selChange();"}
           (for [[k category-str] categories]
@@ -52,7 +52,7 @@
 (defn link-data->html
   "Generate HTML output from a [uri text] tuple."
   [[uri text]]
-  {:pre [string? uri string? text]}
+  {:pre [(string? uri) (string? text)]}
   (let [opts (conj {:href uri}
                    (when (str/starts-with? uri "http")
                      {:target "_blank" :rel "noopener noreferrer"}))]
@@ -62,7 +62,7 @@
   "Using a collection of vectors of `[uri text]` entries, generate their
   string output separated by `separator` if there is more than one."
   [label separator link-data]
-  {:pre [string? separator vector? link-data]}
+  {:pre [(string? separator)]}
   (let [filtered-link-data (remove #(or (nil? %) (nil? (first %))) link-data)]
     (when (seq filtered-link-data)
       (list label (->> (for [link filtered-link-data]
@@ -73,7 +73,7 @@
 (defn restaurant-map-link-url
   "Generate the map urk for a restaurant."
   [{:keys [name address city coords]}]
-  {:pre [string? name string? city (s/nilable (s/valid? :restaurant/coords coords))]}
+  {:pre [(string? name) (string? city) (s/nilable (s/valid? :restaurant/coords coords))]}
   (str base-mapping-url
        (->> [name (when coords address) city "FL"]
               (remove nil?)
@@ -93,7 +93,7 @@
   label. Show all if in the `:all` view; otherwise, show other not
   matching the selected one."
   [{:keys [categories]} full-categories-list selected-category-key]
-  {:pre [set? categories (s/valid? ::spec/categories full-categories-list) keyword? selected-category-key]}
+  {:pre [(set? categories) (s/valid? ::spec/categories full-categories-list) (keyword? selected-category-key)]}
   (let [[label restaurant-categories] (if (= :all selected-category-key)
                                         ["Under: "      categories]
                                         ["Also under: " (remove #{selected-category-key} categories)])]
@@ -108,7 +108,7 @@
 (defn restaurants->html
   "Generate page output for a restaurant listing based on the selected category."
   [restaurants full-category-list selected-category-key]
-  {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) keyword? selected-category-key]}
+  {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) (keyword? selected-category-key)]}
   (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
           (let [restaurant-name (or alias name)
                 map-link        [(restaurant-map-link-url r)
@@ -167,7 +167,7 @@
 (defn restaurant-by-category
   "Filter the list of restaurants using the given `selected-category`."
   [restaurants selected-category]
-  {:pre [(s/valid? ::spec/restaurants restaurants) keyword? selected-category]}
+  {:pre [(s/valid? ::spec/restaurants restaurants) (keyword? selected-category)]}
   (if (= selected-category :all)
     restaurants ;; don't filter anything
     (->> restaurants
@@ -195,7 +195,7 @@
 
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]
-  {:pre [string? base-output-path]}
+  {:pre [(string? base-output-path)]}
   (info (str "read " (count full-category-list) " categories and " (count full-restaurant-list) " restaurants"))
   (let [category-rest-data      (generate-category-restaurant-list full-category-list full-restaurant-list)
         filtered-category-list  (filter-category-list-from-generated-restaurant-data category-rest-data full-category-list)]
