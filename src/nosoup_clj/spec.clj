@@ -1,10 +1,11 @@
 (ns nosoup-clj.spec
-  (:require [clojure.set            :as set]
-            [clojure.spec.alpha     :as s]
-            [clojure.spec.gen.alpha :as gen]
-            [clojure.string         :as str]
-            [nosoup-clj.init        :as init]
-            [nosoup-clj.util        :as util]))
+  (:require
+   [clojure.set            :as set]
+   [clojure.spec.alpha     :as s]
+   [clojure.spec.gen.alpha :as gen]
+   [clojure.string         :as str]
+   [nosoup-clj.init        :as init]
+   [nosoup-clj.util        :as util]))
 
 (s/def ::non-empty-string (s/with-gen (s/and string? not-empty)
                             (fn [] (gen/not-empty (gen/string-alphanumeric)))))

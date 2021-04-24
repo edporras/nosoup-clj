@@ -1,7 +1,8 @@
 (ns nosoup-clj.init
-  (:require [clojure.java.io         :as io]
-            [clojure.string          :as str]
-            [clojure.tools.cli       :refer [parse-opts]])
+  (:require
+   [clojure.java.io         :as io]
+   [clojure.string          :as str]
+   [clojure.tools.cli       :refer [parse-opts]])
   (:gen-class))
 
 (def default-base-output-dir "resources/site/html/")

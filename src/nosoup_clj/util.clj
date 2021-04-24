@@ -1,11 +1,12 @@
 (ns nosoup-clj.util
-  (:require [java-time               :as t]
-            [clojure.edn             :as edn]
-            [clojure.java.io         :as io]
-            [clojure.string          :as str]
-            [digest                  :refer [sha-256]]
-            [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
-            [taoensso.timbre         :as timbre :refer [info]])
+  (:require
+   [clojure.edn             :as edn]
+   [clojure.java.io         :as io]
+   [clojure.string          :as str]
+   [digest                  :refer [sha-256]]
+   [java-time               :as t]
+   [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
+   [taoensso.timbre         :as timbre :refer [info]])
   (:gen-class))
 
 (defn read-config

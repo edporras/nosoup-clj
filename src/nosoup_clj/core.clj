@@ -1,16 +1,18 @@
 (ns nosoup-clj.core
-  (:require [nosoup-clj.init         :as init]
-            [nosoup-clj.util         :as util]
-            [nosoup-clj.spec         :as spec]
-            [clojure.spec.alpha      :as s]
-            [clojure.java.io         :as io]
-            [clojure.string          :as str]
-            [hiccup.core             :refer [html]]
-            [hiccup.page             :as page]
-            [ring.util.codec         :as codec :refer-only [form-encode]]
-            [taoensso.timbre         :as timbre :refer [info fatal]])
-  (:import [java.util Locale]
-           [java.text Collator])
+  (:require
+   [clojure.java.io         :as io]
+   [clojure.spec.alpha      :as s]
+   [clojure.string          :as str]
+   [hiccup.core             :refer [html]]
+   [hiccup.page             :as page]
+   [nosoup-clj.init         :as init]
+   [nosoup-clj.spec         :as spec]
+   [nosoup-clj.util         :as util]
+   [ring.util.codec         :as codec :refer-only [form-encode]]
+   [taoensso.timbre         :as timbre :refer [info fatal]])
+  (:import
+   [java.util Locale]
+   [java.text Collator])
   (:gen-class))
 
 (def base-title (str "No Soup For You - Gainesville"))
@@ -42,11 +44,11 @@
   {:pre [(s/valid? ::spec/categories categories) (keyword? selected-category)]}
   [:nav [:form {:name "catlist" :method :get :action "/c"}
          [:select {:name "cat" :size 1 :onchange "selChange();"}
-          (for [[k category-str] categories]
-            (let [selected (if (= selected-category k)
-                             {:selected "selected"}
-                             {})]
-              [:option (merge {:value (name k)} selected) category-str]))]
+          (for [[k category-str] categories
+                :let [selected (if (= selected-category k)
+                                 {:selected "selected"}
+                                 {})]]
+            [:option (merge {:value (name k)} selected) category-str])]
          [:input {:type "submit" :name "action" :id "search" :value "Search"}]]])
 
 (defn link-data->html
@@ -66,9 +68,9 @@
   (let [filtered-link-data (remove #(or (nil? %) (nil? (first %))) link-data)]
     (when (seq filtered-link-data)
       (list label (->> (for [link filtered-link-data]
-                             (link-data->html link))
-                           vec
-                           (str/join separator))))))
+                         (link-data->html link))
+                       vec
+                       (str/join separator))))))
 
 (defn restaurant-map-link-url
   "Generate the map urk for a restaurant."
@@ -109,22 +111,22 @@
   "Generate page output for a restaurant listing based on the selected category."
   [restaurants full-category-list selected-category-key]
   {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) (keyword? selected-category-key)]}
-  (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants]
-          (let [restaurant-name (or alias name)
-                map-link        [(restaurant-map-link-url r)
-                                 (html address [:br] city ", FL " zip)]]
-            [:li
-             [:h2 restaurant-name]
-             [:div {:class "info"}
-              [:a {:href (str "tel:+1-" (str/replace phone #" " "-"))} phone]
-              [:address (link-data->html map-link)]
-              [:div {:class "links"}
-               (restaurant-links "Links: "
-                                 " | "
-                                 [[uri "website"]             ;; restaurant's website
-                                  (twitter-link-data twitter) ;; twitter link
-                                  ])]]
-             [:footer (restaurant-category-listing r full-category-list selected-category-key)]]))))
+  (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants
+              :let [restaurant-name (or alias name)
+                    map-link        [(restaurant-map-link-url r)
+                                     (html address [:br] city ", FL " zip)]]]
+          [:li
+           [:h2 restaurant-name]
+           [:div {:class "info"}
+            [:a {:href (str "tel:+1-" (str/replace phone #" " "-"))} phone]
+            [:address (link-data->html map-link)]
+            [:div {:class "links"}
+             (restaurant-links "Links: "
+                               " | "
+                               [[uri "website"]             ;; restaurant's website
+                                (twitter-link-data twitter) ;; twitter link
+                                ])]]
+           [:footer (restaurant-category-listing r full-category-list selected-category-key)]])))
 
 (defn generate-category-page-head
   "Generate the head portion of the page."
