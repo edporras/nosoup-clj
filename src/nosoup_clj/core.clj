@@ -118,7 +118,9 @@
           [:li
            [:h2 restaurant-name]
            [:div {:class "info"}
-            [:a {:href (str "tel:+1-" (str/replace phone #" " "-"))} phone]
+            (if-not (= :not-listed phone)
+              [:a {:href (str "tel:+1-" (str/replace phone #" " "-"))} phone]
+              "&nbsp")
             [:address (link-data->html map-link)]
             [:div {:class "links"}
              (restaurant-links "Links: "
