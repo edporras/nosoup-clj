@@ -6,8 +6,7 @@
    [digest                  :refer [sha-256]]
    [java-time               :as t]
    [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
-   [taoensso.timbre         :as timbre :refer [info]])
-  (:gen-class))
+   [taoensso.timbre         :as timbre :refer [info]]))
 
 (defn read-config
   "Reads the contents of the EDN configuration FILE."

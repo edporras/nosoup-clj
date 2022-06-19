@@ -2,8 +2,7 @@
   (:require
    [clojure.java.io         :as io]
    [clojure.string          :as str]
-   [clojure.tools.cli       :refer [parse-opts]])
-  (:gen-class))
+   [clojure.tools.cli       :refer [parse-opts]]))
 
 (def default-base-output-dir "resources/site/html/")
 
