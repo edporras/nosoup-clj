@@ -1,12 +1,12 @@
 (ns nosoup-clj.util
   (:require
-   [clojure.edn             :as edn]
-   [clojure.java.io         :as io]
-   [clojure.string          :as str]
-   [digest                  :refer [sha-256]]
-   [java-time               :as t]
-   [sitemap.core            :as sitemap :refer-only [generate-sitemap]]
-   [taoensso.timbre         :as timbre :refer [info]]))
+   [clj-commons.digest :refer [sha-256]]
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [java-time.api :as t]
+   [sitemap.core :as sitemap]
+   [taoensso.timbre :as timbre :refer [info]]))
 
 (defn read-config
   "Reads the contents of the EDN configuration FILE."
@@ -43,7 +43,7 @@
                  {:loc (str "https://nosoupforyou.com/" cat-str)
                   :lastmod (file-mdate (str base-output-path cat-str "index.html"))
                   :changefreq "monthly"})))
-       (sitemap/generate-sitemap)))
+       sitemap/generate-sitemap))
 
 (defn generate-sitemap
   [base-output-path site-categories]

@@ -1,12 +1,12 @@
 (ns nosoup-clj.init
   (:require
-   [clojure.java.io         :as io]
-   [clojure.string          :as str]
-   [clojure.tools.cli       :refer [parse-opts]]))
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [clojure.tools.cli :refer [parse-opts]]))
 
 (def default-base-output-dir "resources/site/html/")
 
-(def categories-config  (io/file "resources/categories.edn"))
+(def categories-config (io/file "resources/categories.edn"))
 
 (defn- usage [options-summary]
   (->> ["Nosoup Site Generator"
@@ -48,7 +48,7 @@
       (and (= (count arguments) 2) (#{"gen"} (first arguments)))
       (let [config (second arguments)]
         (if (.exists (io/file config))
-          {:action (first arguments)
+          {:action (keyword (first arguments))
            :options (assoc options :config config)}
           {:exit-message (error-msg [(str "Error reading input file '" config "'.")])}))
       :else ; failed custom validation => exit with usage summary

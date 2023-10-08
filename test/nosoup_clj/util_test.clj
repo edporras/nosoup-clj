@@ -1,11 +1,12 @@
 (ns nosoup-clj.util-test
-  (:require [clojure.java.io    :as io]
-            [clojure.string     :as str]
-            [clojure.test       :refer [deftest is are testing use-fixtures]]
-            [java-time          :as t]
-            [nosoup-clj.core    :as nosoup]
-            [nosoup-clj.util    :as sut]
-            [tools.io           :refer [with-tempfile]]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [clojure.test :refer [deftest is are testing use-fixtures]]
+   [java-time.api :as t]
+   [nosoup-clj.core :as nosoup]
+   [nosoup-clj.util :as sut]
+   [tools.io :refer [with-tempfile]]))
 
 (def test-site-baseroot-path "test/site/")
 (def test-site-sitemap-xml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-14</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-29</lastmod><changefreq>monthly</changefreq></url></urlset>")
@@ -32,7 +33,7 @@
     (is (= (sut/file-mdate "test/site/italian/index.html")
            "2020-04-14"))))
 
-(deftest categories->sitemap
+(deftest categories->sitemap-test
   (testing "Sitemap generation from a filtered and sorted category list."
     (are [cat-list] (= test-site-sitemap-xml (sut/categories->sitemap test-site-baseroot-path cat-list))
 

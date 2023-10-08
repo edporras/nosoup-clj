@@ -8,7 +8,7 @@
    [nosoup-clj.init         :as init]
    [nosoup-clj.spec         :as spec]
    [nosoup-clj.util         :as util]
-   [ring.util.codec         :as codec :refer-only [form-encode]]
+   [ring.util.codec         :refer [form-encode]]
    [taoensso.timbre         :as timbre :refer [info fatal]])
   (:import
    [java.util Locale]
@@ -78,10 +78,10 @@
   {:pre [(string? name) (string? city) (s/nilable (s/valid? :restaurant/coords coords))]}
   (str base-mapping-url
        (->> [name (when coords address) city "FL"]
-              (remove nil?)
-              (vec)
-              (map #(codec/form-encode %))
-              (str/join ","))))
+            (remove nil?)
+            vec
+            (map form-encode)
+            (str/join ","))))
 
 (defn twitter-link-data
   "Generate the map link tuple for the twitter link, to be passed to `restaurant-links`."
@@ -103,7 +103,7 @@
       (->> restaurant-categories
            (mapv #(let [category-str (get full-categories-list %)]
                     (vec [(str "/" (name %) "/") category-str])))
-           (sort)
+           sort
            (restaurant-links label ", "))
       "&nbsp")))
 
@@ -113,8 +113,8 @@
   {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) (keyword? selected-category-key)]}
   (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants
               :let [restaurant-name (or alias name)
-                    map-link        [(restaurant-map-link-url r)
-                                     (html address [:br] city ", FL " zip)]]]
+                    map-link [(restaurant-map-link-url r)
+                              (html address [:br] city ", FL " zip)]]]
           [:li
            [:h2 restaurant-name]
            [:div {:class "info"}
@@ -165,15 +165,14 @@
                  (restaurants->html filtered-restaurants full-category-list category-k)]]
                [:footer [:p
                          "This is a listing of independent businesses in Gainesville, FL. If you own or know "
-                         "of a business you'd like to see listed, please contact: nsfy at digressed dot net or "
-                         "via Twitter at " (link-data->html (twitter-link-data "NSFYgnv")) "."]]]))
+                         "of a business you'd like to see listed, please contact: nsfy at digressed dot net."]]]))
 
 (defn restaurant-by-category
   "Filter the list of restaurants using the given `selected-category`."
   [restaurants selected-category]
   {:pre [(s/valid? ::spec/restaurants restaurants) (keyword? selected-category)]}
   (if (= selected-category :all)
-    restaurants ;; don't filter anything
+    restaurants ; don't filter anything
     (->> restaurants
          (filter #(contains? (:categories %) selected-category)))))
 
@@ -195,14 +194,17 @@
 
 (defn category-page-output-path
   [base-output-path category-k]
-  (str base-output-path (when (not= :all category-k) (str (name category-k) "/")) "index.html"))
+  (str base-output-path
+       (when (not= :all category-k)
+         (str (name category-k) "/"))
+       "index.html"))
 
 (defn generate-site
   [{:keys [full-restaurant-list full-category-list base-output-path]}]
   {:pre [(string? base-output-path)]}
   (info (str "read " (count full-category-list) " categories and " (count full-restaurant-list) " restaurants"))
-  (let [category-rest-data      (generate-category-restaurant-list full-category-list full-restaurant-list)
-        filtered-category-list  (filter-category-list-from-generated-restaurant-data category-rest-data full-category-list)]
+  (let [category-rest-data (generate-category-restaurant-list full-category-list full-restaurant-list)
+        filtered-category-list (filter-category-list-from-generated-restaurant-data category-rest-data full-category-list)]
     (doseq [[category-k filtered-restaurants] category-rest-data]
       (let [output-path (category-page-output-path base-output-path category-k)]
         (if (seq filtered-restaurants)
@@ -214,8 +216,7 @@
           (when (.exists (io/file output-path))
             (info (str "No restaurants found for category " category-k " - deleting old output at " output-path))
             (io/delete-file output-path)
-            (io/delete-file (str/replace output-path #"index.html" "")))
-          )))
+            (io/delete-file (str/replace output-path #"index.html" ""))))))
     (util/generate-sitemap base-output-path filtered-category-list)))
 
 (defn -main
@@ -223,9 +224,9 @@
   (let [{:keys [action options exit-message ok?]} (init/validate-args args)]
     (if-not exit-message
       (case action
-        "gen" (let [full-categories-list {:full-category-list (read-categories-list init/categories-config)}
-                    full-restaurant-list {:full-restaurant-list (read-restaurant-list (:config options))}]
-                (generate-site (merge options full-restaurant-list full-categories-list))))
+        :gen (let [full-categories-list {:full-category-list (read-categories-list init/categories-config)}
+                   full-restaurant-list {:full-restaurant-list (read-restaurant-list (:config options))}]
+               (generate-site (merge options full-restaurant-list full-categories-list))))
       (do ;; error validating args
         (fatal exit-message)
         (System/exit (if ok? 0 1))))))

@@ -1,8 +1,9 @@
 (ns nosoup-clj.spec-test
-  (:require [clojure.test                  :refer [deftest is are]]
-            [clojure.spec.alpha            :as s]
-            [clojure.test.check.generators :as gen]
-            [nosoup-clj.spec               :as sut]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [clojure.spec.gen.alpha :as gen]
+   [clojure.test :refer [deftest is are]]
+   [nosoup-clj.spec :as sut]))
 
 (deftest check-spec-returns-data-test
   (let [categories {:italian "Italian" :chinese "Chinese"}]
