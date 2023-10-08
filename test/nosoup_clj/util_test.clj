@@ -1,12 +1,12 @@
 (ns nosoup-clj.util-test
   (:require
+   [babashka.fs :as fs]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.test :refer [deftest is are testing use-fixtures]]
    [java-time.api :as t]
    [nosoup-clj.core :as nosoup]
-   [nosoup-clj.util :as sut]
-   [tools.io :refer [with-tempfile]]))
+   [nosoup-clj.util :as sut]))
 
 (def test-site-baseroot-path "test/site/")
 (def test-site-sitemap-xml "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://nosoupforyou.com/italian/</loc><lastmod>2020-04-14</lastmod><changefreq>monthly</changefreq></url><url><loc>https://nosoupforyou.com/mexican/</loc><lastmod>2020-04-29</lastmod><changefreq>monthly</changefreq></url></urlset>")
@@ -45,60 +45,57 @@
     (let [sitemap (io/file (str test-site-baseroot-path "sitemap.xml"))]
       (sut/generate-sitemap test-site-baseroot-path {:all "All" :italian "Italian" :mexican "Mexican"})
       (.deleteOnExit sitemap)
-      (is (.exists sitemap)))))
+      (is (fs/exists? sitemap)))))
 
 (deftest resource-outdated?-test
   (testing "Returns `true` if destination does not exist."
-    (with-tempfile [tmp]
-      (is (sut/resource-outdated? tmp "1")))))
+    (fs/with-temp-dir [tmp]
+      (is (sut/resource-outdated? (str tmp fs/file-separator "t.tmp") "1"))))
 
-(deftest resource-outdated?-matching-file-exists-test
   (testing "Returns `false` if destination exists and matches output."
     (let [path "test/site/italian/index.html"
           data (slurp path)]
-      (is (not (sut/resource-outdated? path data))))))
+      (is (not (sut/resource-outdated? path data)))))
 
-(deftest resource-outdated?-outdated-file-exists-test
   (testing "Returns `true` if destination exists but output differs."
     (let [path "test/site/italian/index.html"
           data (str (slurp path) "blah")]
       (is (sut/resource-outdated? path data)))))
 
-(deftest cleanup-markup-removes-js-attrib-test
+(deftest cleanup-markup-test
   (testing "Removes type='javascript' attribute not valid in html5."
     (is (= (sut/cleanup-markup "aa<script src=\"/js/searchbar.js\" type=\"text/javascript\"></script>aaa")
            "aa<script src=\"/js/searchbar.js\"></script>aaa"))))
 
 (deftest to-disk-test
   (testing "Writes file to disk and returns `true`."
-    (with-tempfile [tmp]
-      (let [tmp-file (io/file tmp)
+    (fs/with-temp-dir [tmp]
+      (let [tmp-file (io/file (str tmp fs/file-separator "t.tmp"))
             status   (sut/to-disk tmp-file "[1 2 3 4]")]
-        (is (and (= status true) (.exists tmp-file)))))))
+        (is (and (= status true) (fs/exists? tmp-file)))))))
 
 (deftest output->disk-test
   (testing "Writes file to disk (creating parent dirs), returning `true`."
-    (with-tempfile [tmp]
-      (let [tmp-file (io/file tmp)
+    (fs/with-temp-dir [tmp]
+      (let [tmp-file (io/file (str tmp fs/file-separator "t.tmp"))
             status   (sut/output->disk (.getAbsolutePath tmp-file) "[1 2 3 4]")]
-        (is (and (= status true) (.exists tmp-file)))))))
+        (is (and (= status true) (fs/exists? tmp-file))))))
 
-(deftest output->disk-no-write-test
   (testing "Does not overwrite file to disk when matching file exists; returns `nil`."
-    (with-tempfile [tmp]
-      (let [output   "[1 2 3 4]"
-            out-file (io/file tmp)]
-        (sut/to-disk out-file output) ;; pre-write file to disk
+    (fs/with-temp-dir [tmp]
+      (let [output "[1 2 3 4]"
+            out-file (io/file (str tmp fs/file-separator "t.tmp"))]
+        (sut/to-disk out-file output) ; pre-write file to disk
         (let [mod-date-before (.lastModified out-file)
-              status          (sut/output->disk out-file output)]
-          (is (and (nil? status) (= mod-date-before (.lastModified out-file)))))))))
+              status (sut/output->disk out-file output)]
+          (is (and (nil? status) (= mod-date-before (.lastModified out-file))))))))
 
-(deftest output->disk-uses-correct-print-test
   (testing "Writes file with correct whitespaces."
-    (let [category    [:italian "Italian"]
+    (let [category [:italian "Italian"]
           restaurants [{:name "Test 1" :address "Address 1" :city "City" :zip "12345" :phone "123 456-7890" :categories #{:italian}}]
-          categories  {:italian "Italian"}]
-      (with-tempfile [tmp]
-        (->> (nosoup/generate-category-page category restaurants categories categories)
-             (sut/output->disk tmp))
-        (is (not (str/includes? (slurp tmp) "\\n")))))))
+          categories {:italian "Italian"}]
+      (fs/with-temp-dir [tmp]
+        (let [filename (io/file (str tmp fs/file-separator "t.tmp"))]
+          (->> (nosoup/generate-category-page category restaurants categories categories)
+               (sut/output->disk filename))
+          (is (not (str/includes? filename "\\n"))))))))
