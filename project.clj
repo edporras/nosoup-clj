@@ -16,6 +16,6 @@
   :main ^:skip-aot nosoup-clj.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
-             :dev  {:dependencies [[hickory "0.7.1"]
-                                   [org.clojure/test.check "1.1.1"]
-                                   [com.oscaro/tools-io "0.3.32"]]}})
+             :dev  {:dependencies [[babashka/fs "0.4.19"]
+                                   [hickory "0.7.1"]
+                                   [org.clojure/test.check "1.1.1"]]}})

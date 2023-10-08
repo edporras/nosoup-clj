@@ -1,3 +1,1 @@
-{:linters
- {:unresolved-symbol
-  {:exclude [(com.oscaro/tools.io [with-tempfile])]}}}
+{}
