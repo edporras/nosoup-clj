@@ -35,7 +35,7 @@
 
 (deftest categories->sitemap-test
   (testing "Sitemap generation from a filtered and sorted category list."
-    (are [cat-list] (= test-site-sitemap-xml (sut/categories->sitemap test-site-baseroot-path cat-list))
+    (are [cat-list] (= test-site-sitemap-xml (sut/categories->sitemap nosoup/base-domain test-site-baseroot-path cat-list))
 
       {:italian "Italian" :mexican "Mexican"}
       {:all "All" :italian "Italian" :mexican "Mexican"})))
@@ -43,7 +43,7 @@
 (deftest generate-sitemap-test
   (testing "Sitemap is written to disk at given path."
     (let [sitemap (io/file (str test-site-baseroot-path "sitemap.xml"))]
-      (sut/generate-sitemap test-site-baseroot-path {:all "All" :italian "Italian" :mexican "Mexican"})
+      (sut/generate-sitemap nosoup/base-domain test-site-baseroot-path {:all "All" :italian "Italian" :mexican "Mexican"})
       (.deleteOnExit sitemap)
       (is (fs/exists? sitemap)))))
 

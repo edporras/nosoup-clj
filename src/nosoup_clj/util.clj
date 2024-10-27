@@ -34,22 +34,22 @@
   "Generate the site's sitemap from the given final category list. Reads
   the modification time stamps from the output files found under the
   `base-output-path`."
-  [base-output-path filtered-categories]
+  [base-domain base-output-path filtered-categories]
   {:pre [string? base-output-path]}
   (->> filtered-categories
        (remove #(= :all (first %)))
        (mapv (fn [[cat-k _]]
                (let [cat-str (str (name cat-k) "/")]
-                 {:loc (str "https://nosoupforyou.com/" cat-str)
+                 {:loc (str base-domain cat-str)
                   :lastmod (file-mdate (str base-output-path cat-str "index.html"))
                   :changefreq "monthly"})))
        sitemap/generate-sitemap))
 
 (defn generate-sitemap
-  [base-output-path site-categories]
+  [base-domain base-output-path site-categories]
   (let [sitemap-path   (str base-output-path "sitemap.xml")
         sitemap-output (->> site-categories
-                            (categories->sitemap base-output-path))]
+                            (categories->sitemap base-domain base-output-path))]
     (when (resource-outdated? sitemap-path sitemap-output)
       (info "Writing " sitemap-path)
       (sitemap/save-sitemap (io/file sitemap-path) sitemap-output))))

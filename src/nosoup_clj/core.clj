@@ -16,6 +16,7 @@
   (:gen-class))
 
 (def ^:const base-title (str "No Soup For You - Gainesville"))
+(def ^:const base-domain "https://nosoupforyou.com/")
 
 (def ^:const base-css "/css/site.css")
 (def ^:const base-js "/js/site.js")
@@ -222,7 +223,7 @@
             (info (str "No restaurants found for category " category-k " - deleting old output at " output-path))
             (io/delete-file output-path)
             (io/delete-file (str/replace output-path #"index.html" ""))))))
-    (util/generate-sitemap base-output-path filtered-category-list)))
+    (util/generate-sitemap base-domain base-output-path filtered-category-list)))
 
 (defn -main
   [& args]
