@@ -11,8 +11,8 @@
    [ring.util.codec         :refer [form-encode]]
    [taoensso.timbre         :as timbre :refer [info fatal]])
   (:import
-   [java.util Locale]
-   [java.text Collator])
+   (java.util Locale)
+   (java.text Collator))
   (:gen-class))
 
 (def base-title (str "No Soup For You - Gainesville"))
@@ -125,8 +125,8 @@
             [:div {:class "links"}
              (restaurant-links "Links: "
                                " | "
-                               [[uri "website"]             ;; restaurant's website
-                                (twitter-link-data twitter) ;; twitter link
+                               [[uri "website"]             ; restaurant's website
+                                (twitter-link-data twitter) ; insta link
                                 ])]]
            [:footer (restaurant-category-listing r full-category-list selected-category-key)]])))
 
@@ -171,10 +171,9 @@
   "Filter the list of restaurants using the given `selected-category`."
   [restaurants selected-category]
   {:pre [(s/valid? ::spec/restaurants restaurants) (keyword? selected-category)]}
-  (if (= selected-category :all)
-    restaurants ; don't filter anything
-    (->> restaurants
-         (filter #(contains? (:categories %) selected-category)))))
+  (cond->> restaurants
+    (not= selected-category :all)
+    (filter #(contains? (:categories %) selected-category))))
 
 (defn generate-category-restaurant-list
   "Create a vector of '(category filtered-restaurant-data) entries."
@@ -187,8 +186,7 @@
   "Removes entries from the category list that didn't generate any page output."
   [category-rest-data full-category-list]
   (->> category-rest-data
-       (map (fn [[k data]] (when (seq data) k)))
-       (remove nil?)
+       (keep (fn [[k data]] (when (seq data) k)))
        (select-keys full-category-list)
        (into (sorted-map))))
 
@@ -227,7 +225,7 @@
         :gen (let [full-categories-list {:full-category-list (read-categories-list init/categories-config)}
                    full-restaurant-list {:full-restaurant-list (read-restaurant-list (:config options))}]
                (generate-site (merge options full-restaurant-list full-categories-list))))
-      (do ;; error validating args
+      (do ; error validating args
         (fatal exit-message)
         (System/exit (if ok? 0 1))))))
 
