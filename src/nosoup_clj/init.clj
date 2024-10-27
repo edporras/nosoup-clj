@@ -4,7 +4,7 @@
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]))
 
-(def default-base-output-dir "resources/site/html/")
+(def ^:const default-base-output-dir "resources/site/html/")
 
 (def categories-config (io/file "resources/categories.edn"))
 
@@ -24,7 +24,7 @@
   (str "The following errors occurred while parsing your command:\n\n"
        (str/join \newline errors)))
 
-(def cli-options
+(def ^:const cli-options
   [["-o" "--base-output-path OUTPUT-PATH" "Specify the output directory where the files will be written to."
     :validate [#(if (.exists (io/file %))
                   true

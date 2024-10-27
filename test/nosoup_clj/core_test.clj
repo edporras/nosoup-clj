@@ -79,11 +79,11 @@
           markup (sut/restaurant-map-link-url rest)]
       (is (str/includes? markup (codec/form-encode (:address rest)))))))
 
-(deftest twitter-link-data-test
-  (testing "Generate twitter link data."
-    (are [handle expected] (= expected (sut/twitter-link-data handle))
+(deftest insta-link-data-test
+  (testing "Generate insta link data."
+    (are [handle expected] (= expected (sut/insta-link-data handle))
 
-      "test" [(str sut/base-twitter-url "test") "@test"]
+      "test" [(str sut/base-instagram-url "test") "@test"]
       nil    nil)))
 
 (deftest restaurant-category-listing-test
@@ -151,14 +151,14 @@
 
 (deftest restaurants->html-single-category-with-twitter-test
   (testing "Restaurant listing output with single category and twitter link."
-    (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :twitter "rn" :categories #{:mexican}}]
+    (let [rest-list [{:name "Rest Name" :address "B" :city "C" :zip "22222" :phone "123 456-7890" :instagram "rn" :categories #{:mexican}}]
           output    (sut/restaurants->html rest-list {:mexican "Mexican"} :mexican)
-          twitter   (-> (map html/as-hickory (html/parse-fragment output))
+          instagram (-> (map html/as-hickory (html/parse-fragment output))
                         first
                         (get-in [:content 1 :content 2 :content 1])
                         (dissoc :type :tag))]
-      (is (= twitter
-             {:attrs {:href (str sut/base-twitter-url "rn"), :rel "noopener noreferrer", :target "_blank"},
+      (is (= instagram
+             {:attrs {:href (str sut/base-instagram-url "rn"), :rel "noopener noreferrer", :target "_blank"},
               :content ["@rn"]})))))
 
 (deftest generate-category-page-head-includes-title-test
@@ -221,10 +221,10 @@
              (is (= expected rslt)))
 
         [:italian "Italian"]
-        "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>&nbsp</footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net.</p></footer></body></html>"
+        "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville - Italian</title><link href=\"/img/logo.png\" rel==\"prefetch\"><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL under the Italian category\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants Italian\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option selected=\"selected\" value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>&nbsp</footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net.</p></footer></body></html>"
 
         [:all "All"]
-        "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>Under: <a href=\"/italian/\">Italian</a></footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net.</p></footer></body></html>"))))
+        "<!DOCTYPE html>\n<html lang=\"en\"><head><title>No Soup For You - Gainesville</title><link href=\"/img/logo.png\" rel==\"prefetch\"><meta content=\"Ed Porras\" name=\"author\"><meta content=\"Guide of independent restaurants and grocers in Gainesville, FL\" name=\"description\"><meta content=\"Gainesville Local Independently-owned Restaurants\" name=\"keywords\"><meta content=\"width=device-width,initial-scale=1.0\" name=\"viewport\"><link href=\"/css/site.css\" rel=\"stylesheet\" type=\"text/css\"><script src=\"/js/site.js\" type=\"text/javascript\"></script></head><body onload=\"load();\"><header><h1><img alt=\"Dining in Gainesville\" height=\"42\" src=\"/img/logo.png\" width=\"293\"></h1><p>Locally-owned restaurants, cafes, and grocers.</p><nav><form action=\"/c\" method=\"get\" name=\"catlist\"><select name=\"cat\" onchange=\"selChange();\" size=\"1\"><option value=\"italian\">Italian</option></select><input id=\"search\" name=\"action\" type=\"submit\" value=\"Search\"></form></nav></header><div id=\"content\"><ul><li><h2>Test 1</h2><div class=\"info\"><a href=\"tel:+1-123-456-7890\">123 456-7890</a><address><a href=\"https://maps.google.com/?daddr=Test+1,City,FL\" rel=\"noopener noreferrer\" target=\"_blank\">Address 1<br />City, FL 12345</a></address><div class=\"links\"></div></div><footer>Under: <a href=\"/italian/\">Italian</a></footer></li></ul></div><footer><p>This is a listing of independent businesses in Gainesville, FL. If you own or know of a business you'd like to see listed, please contact: nsfy at digressed dot net.</p></footer></body></html>"))))
 
 (deftest generate-category-restaurant-list-test
   (testing "Generate category to restaurant list map."

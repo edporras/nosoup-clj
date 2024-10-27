@@ -15,11 +15,15 @@
    (java.text Collator))
   (:gen-class))
 
-(def base-title (str "No Soup For You - Gainesville"))
+(def ^:const base-title (str "No Soup For You - Gainesville"))
+
+(def ^:const base-css "/css/site.css")
+(def ^:const base-js "/js/site.js")
+(def ^:const base-img "/img/logo.png")
 
 ;; turns out this falls-back to google if the device doesn't support apple maps
-(def base-mapping-url "https://maps.google.com/?daddr=")
-(def base-twitter-url "https://twitter.com/")
+(def ^:const base-mapping-url "https://maps.google.com/?daddr=")
+(def ^:const base-instagram-url "https://www.instagram.com/")
 
 (defn read-categories-list
   "Reads the categories config, injects a global entry used to list `:all`."
@@ -53,9 +57,11 @@
 
 (defn link-data->html
   "Generate HTML output from a [uri text] tuple."
-  [[uri text]]
+  [[uri text alt-text]]
   {:pre [(string? uri) (string? text)]}
-  (let [opts (conj {:href uri}
+  (let [opts (conj (cond-> {:href uri}
+                     alt-text
+                     (assoc :title alt-text))
                    (when (str/starts-with? uri "http")
                      {:target "_blank" :rel "noopener noreferrer"}))]
     (html [:a opts text])))
@@ -83,12 +89,12 @@
             (map form-encode)
             (str/join ","))))
 
-(defn twitter-link-data
-  "Generate the map link tuple for the twitter link, to be passed to `restaurant-links`."
+(defn insta-link-data
+  "Generate the map link tuple for the insta link, to be passed to `restaurant-links`."
   [handle]
-  {:pre [(s/nilable (s/valid? :restaurant/twitter handle))]}
+  {:pre [(s/nilable (s/valid? :restaurant/instagram handle))]}
   (when handle
-    [(str base-twitter-url handle) (str "@" handle)]))
+    [(str base-instagram-url handle) (str "@" handle)]))
 
 (defn restaurant-category-listing
   "Generate the list of categories to be shown in the `Under`
@@ -111,7 +117,7 @@
   "Generate page output for a restaurant listing based on the selected category."
   [restaurants full-category-list selected-category-key]
   {:pre [(s/valid? ::spec/restaurants restaurants) (s/valid? ::spec/categories full-category-list) (keyword? selected-category-key)]}
-  (html (for [{:keys [name alias address city zip phone uri twitter] :as r} restaurants
+  (html (for [{:keys [name alias address city zip phone uri instagram] :as r} restaurants
               :let [restaurant-name (or alias name)
                     map-link [(restaurant-map-link-url r)
                               (html address [:br] city ", FL " zip)]]]
@@ -125,18 +131,19 @@
             [:div {:class "links"}
              (restaurant-links "Links: "
                                " | "
-                               [[uri "website"]             ; restaurant's website
-                                (twitter-link-data twitter) ; insta link
-                                ])]]
+                               [[uri "website"]
+                                (insta-link-data instagram)])]]
            [:footer (restaurant-category-listing r full-category-list selected-category-key)]])))
 
 (defn generate-category-page-head
   "Generate the head portion of the page."
   [[category-k category-str :as c]]
   {:pre [(s/valid? ::spec/category c)]}
-  [:head [:title (if (= :all category-k)
-                   base-title
-                   (str base-title " - " category-str))]
+  [:head
+   [:title (if (= :all category-k)
+             base-title
+             (str base-title " - " category-str))]
+   [:link {:rel= "prefetch" :href base-img}]
    [:meta {:name "author" :content "Ed Porras"}]
    [:meta {:name "description"
            :content (str "Guide of independent restaurants and grocers in Gainesville, FL"
@@ -147,8 +154,8 @@
                          (when-not (= :all category-k)
                            (str " " category-str)))}]
    [:meta {:name "viewport" :content "width=device-width,initial-scale=1.0"}]
-   (page/include-css "/css/site.css")
-   (page/include-js "/js/site.js")])
+   (page/include-css base-css)
+   (page/include-js base-js)])
 
 (defn generate-category-page
   "Generate page output for the selected category using the filtered list of restaurants and categories."
@@ -157,7 +164,7 @@
               (generate-category-page-head category)
               [:body {:onload "load();"}
                [:header
-                [:h1 [:img {:src "/img/logo.png" :alt "Dining in Gainesville" :width "293" :height "42"}]]
+                [:h1 [:img {:src base-img :alt "Dining in Gainesville" :width "293" :height "42"}]]
                 [:p "Locally-owned restaurants, cafes, and grocers."]
                 (categories->html filtered-category-list category-k)]
                [:div {:id "content"}
