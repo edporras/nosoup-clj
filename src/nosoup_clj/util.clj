@@ -40,7 +40,7 @@
        (remove #(= :all (first %)))
        (mapv (fn [[cat-k _]]
                (let [cat-str (str (name cat-k) "/")]
-                 {:loc (str base-domain cat-str)
+                 {:loc (str base-domain "/" cat-str)
                   :lastmod (file-mdate (str base-output-path cat-str "index.html"))
                   :changefreq "monthly"})))
        sitemap/generate-sitemap))

@@ -15,8 +15,8 @@
    (java.text Collator))
   (:gen-class))
 
-(def ^:const base-title (str "No Soup For You - Gainesville"))
-(def ^:const base-domain "https://nosoupforyou.com/")
+(def ^:const base-title "No Soup For You - Gainesville")
+(def ^:const base-domain "https://nosoupforyou.com")
 
 (def ^:const base-css "/css/site.css")
 (def ^:const base-js "/js/site.js")
