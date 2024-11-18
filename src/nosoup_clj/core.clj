@@ -144,7 +144,9 @@
    [:title (if (= :all category-k)
              base-title
              (str base-title " - " category-str))]
-   [:link {:rel= "prefetch" :href base-img}]
+   [:link {:rel "canonical" :href (str base-domain "/" (when-not (= :all category-k)
+                                                         (str/lower-case category-str)))}]
+   [:link {:rel "prefetch" :href base-img}]
    [:meta {:name "author" :content "Ed Porras"}]
    [:meta {:name "description"
            :content (str "Guide of independent restaurants and grocers in Gainesville, FL"
